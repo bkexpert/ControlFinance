@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-  getAuth
+  getAuth,
+  EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
@@ -23,8 +24,10 @@ const auth = getAuth(app);
 
 const db = getFirestore(app);
 
-window.firebaseApp = app;
-window.firebaseAuth = auth;
-window.firebaseDb = db;
-
 console.log("Firebase conectado com sucesso!");
+
+export {
+  auth,
+  db,
+  EmailAuthProvider
+};
