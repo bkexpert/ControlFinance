@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações | Finance Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js"></script>
+</head>
+<body data-page="settings">
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
+        <span class="brand-mark" aria-hidden="true">FP</span>
+        <span>Finance Pro</span>
+      </a>
+      <nav class="side-nav" aria-label="Navegação principal">
+        <a href="dashboard.html">Dashboard</a>
+        <a class="active" href="settings.html">Configurações</a>
+      </nav>
+      <button id="logoutBtn" class="ghost-button sidebar-logout" type="button">Sair</button>
+    </aside>
+
+    <main class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Configurações</p>
+          <h1 id="settingsProfileName">Carregando...</h1>
+        </div>
+        <div class="topbar-actions">
+          <a class="secondary-link" href="dashboard.html">Dashboard</a>
+          <button id="mobileLogoutBtn" class="ghost-button" type="button">Sair</button>
+        </div>
+      </header>
+
+      <div class="settings-grid">
+        <section class="panel" aria-labelledby="categorySettingsTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Categorias</p>
+              <h2 id="categorySettingsTitle">Gerenciar categorias</h2>
+            </div>
+          </div>
+          <form id="categoryForm" class="form-stack">
+            <input id="categoryId" type="hidden">
+            <label>
+              <span>Nome da categoria</span>
+              <input id="categoryName" type="text" maxlength="60" required>
+            </label>
+            <div class="button-row">
+              <button id="saveCategoryBtn" class="primary-button" type="submit">Salvar categoria</button>
+              <button id="cancelCategoryEditBtn" class="secondary-button hidden" type="button">Cancelar</button>
+            </div>
+          </form>
+          <div id="categoriesList" class="list-stack settings-list" aria-live="polite"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="themeSettingsTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Preferências visuais</p>
+              <h2 id="themeSettingsTitle">Tema e privacidade</h2>
+            </div>
+          </div>
+          <div class="settings-stack">
+            <label class="switch-row">
+              <span>Tema claro</span>
+              <input id="themeToggle" type="checkbox">
+            </label>
+            <label class="switch-row">
+              <span>Mostrar gráficos</span>
+              <input id="showChartsToggle" type="checkbox">
+            </label>
+            <label class="switch-row">
+              <span>Mostrar cards financeiros</span>
+              <input id="showCardsToggle" type="checkbox">
+            </label>
+            <label class="switch-row">
+              <span>PDF respeita valores ocultos</span>
+              <input id="exportHiddenToggle" type="checkbox">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="privacyTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Ocultação de valores</p>
+              <h2 id="privacyTitle">Privacidade por card</h2>
+            </div>
+          </div>
+          <div class="settings-stack">
+            <label class="switch-row"><span>Ocultar entradas</span><input data-privacy="income" type="checkbox"></label>
+            <label class="switch-row"><span>Ocultar saídas</span><input data-privacy="expense" type="checkbox"></label>
+            <label class="switch-row"><span>Ocultar investimentos</span><input data-privacy="investment" type="checkbox"></label>
+            <label class="switch-row"><span>Ocultar saldo</span><input data-privacy="balance" type="checkbox"></label>
+          </div>
+        </section>
+
+        <section class="panel danger-panel" aria-labelledby="dangerTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Conta e dados</p>
+              <h2 id="dangerTitle">Zona sensível</h2>
+            </div>
+          </div>
+          <div class="danger-actions">
+            <button id="exportJsonBtn" class="secondary-button" type="button">Exportar dados JSON</button>
+            <button id="clearDataBtn" class="danger-button" type="button">Limpar dados financeiros</button>
+            <button id="deleteAccountBtn" class="danger-button" type="button">Excluir conta</button>
+          </div>
+          <p class="feedback">A exclusão de conta remove perfil, categorias, movimentações, filtros e preferências.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="toastArea" class="toast-area" aria-live="polite"></div>
+</body>
+</html>

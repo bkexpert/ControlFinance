@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar | Finance Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js"></script>
+</head>
+<body data-page="login">
+  <main class="auth-page">
+    <section class="auth-panel" aria-labelledby="authTitle">
+      <div class="brand-block">
+        <span class="brand-mark" aria-hidden="true">FP</span>
+        <div>
+          <p class="eyebrow">Finance Pro</p>
+          <h1 id="authTitle">Acesso seguro</h1>
+        </div>
+      </div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Modo de acesso">
+        <button id="showLoginBtn" class="tab-button active" type="button">Entrar</button>
+        <button id="showRegisterBtn" class="tab-button" type="button">Cadastrar</button>
+      </div>
+
+      <form id="loginForm" class="form-stack">
+        <label>
+          <span>CPF</span>
+          <input id="loginCpf" type="text" inputmode="numeric" autocomplete="username" maxlength="14" required>
+        </label>
+        <label>
+          <span>Senha</span>
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button id="loginBtn" class="primary-button" type="submit">Entrar</button>
+      </form>
+
+      <form id="registerForm" class="form-stack hidden">
+        <label>
+          <span>Nome</span>
+          <input id="registerName" type="text" autocomplete="name" maxlength="80" required>
+        </label>
+        <label>
+          <span>CPF</span>
+          <input id="registerCpf" type="text" inputmode="numeric" autocomplete="username" maxlength="14" required>
+        </label>
+        <label>
+          <span>Celular</span>
+          <input id="registerPhone" type="tel" autocomplete="tel" maxlength="20" required>
+        </label>
+        <label>
+          <span>Senha</span>
+          <input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required>
+        </label>
+        <button id="registerBtn" class="primary-button" type="submit">Criar conta</button>
+      </form>
+
+      <p id="authFeedback" class="feedback" role="status" aria-live="polite"></p>
+      <p id="firebaseConfigWarning" class="setup-warning hidden"></p>
+    </section>
+  </main>
+</body>
+</html>
