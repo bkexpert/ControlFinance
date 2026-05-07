@@ -1,7 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
+  import {
   getAuth,
+  deleteUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -57,7 +59,9 @@ export {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
-  onAuthStateChanged,
+onAuthStateChanged,
+deleteUser,
+  
 
   collection,
   addDoc,
