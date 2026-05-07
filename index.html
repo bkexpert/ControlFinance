@@ -21,6 +21,7 @@
       <div class="auth-tabs" role="tablist" aria-label="Modo de acesso">
         <button id="showLoginBtn" class="tab-button active" type="button">Entrar</button>
         <button id="showRegisterBtn" class="tab-button" type="button">Cadastrar</button>
+        <button id="showRecoveryBtn" class="tab-button" type="button">Recuperar</button>
       </div>
 
       <form id="loginForm" class="form-stack">
@@ -53,6 +54,14 @@
           <input id="registerPassword" type="password" autocomplete="new-password" minlength="6" required>
         </label>
         <button id="registerBtn" class="primary-button" type="submit">Criar conta</button>
+      </form>
+
+      <form id="recoveryForm" class="form-stack hidden">
+        <label>
+          <span>CPF</span>
+          <input id="recoveryCpf" type="text" inputmode="numeric" autocomplete="username" maxlength="14" required>
+        </label>
+        <button id="recoveryBtn" class="primary-button" type="submit">Enviar recuperação</button>
       </form>
 
       <p id="authFeedback" class="feedback" role="status" aria-live="polite"></p>

@@ -4,6 +4,7 @@ import {
   isFirebaseConfigured,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   onAuthStateChanged,
   signOut,
   deleteUser,
@@ -40,7 +41,8 @@ const app = {
   unsubscribers: [],
   charts: {
     category: null,
-    flow: null
+    flow: null,
+    monthly: null
   }
 };
 
@@ -59,7 +61,6 @@ function getDefaultPreferences() {
     theme: "dark",
     hiddenValues: {
       income: false,
-      expense: false,
       investment: false,
       balance: false
     },
@@ -83,9 +84,11 @@ function initLoginPage() {
 
   $("showLoginBtn").addEventListener("click", () => setAuthMode("login"));
   $("showRegisterBtn").addEventListener("click", () => setAuthMode("register"));
+  $("showRecoveryBtn").addEventListener("click", () => setAuthMode("recovery"));
   $("loginForm").addEventListener("submit", handleLogin);
   $("registerForm").addEventListener("submit", handleRegister);
-  ["loginCpf", "registerCpf"].forEach((id) => $(id).addEventListener("input", formatCpfField));
+  $("recoveryForm").addEventListener("submit", handleRecovery);
+  ["loginCpf", "registerCpf", "recoveryCpf"].forEach((id) => $(id).addEventListener("input", formatCpfField));
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -162,10 +165,14 @@ function bindSettingsEvents() {
 
 function setAuthMode(mode) {
   const login = mode === "login";
+  const register = mode === "register";
+  const recovery = mode === "recovery";
   $("loginForm").classList.toggle("hidden", !login);
-  $("registerForm").classList.toggle("hidden", login);
+  $("registerForm").classList.toggle("hidden", !register);
+  $("recoveryForm").classList.toggle("hidden", !recovery);
   $("showLoginBtn").classList.toggle("active", login);
-  $("showRegisterBtn").classList.toggle("active", !login);
+  $("showRegisterBtn").classList.toggle("active", register);
+  $("showRecoveryBtn").classList.toggle("active", recovery);
   clearAuthFields();
   setFeedback($("authFeedback"), "");
 }
@@ -227,6 +234,30 @@ async function handleLogin(event) {
     clearPasswords();
     setFeedback($("authFeedback"), "Senha incorreta", "error");
   }
+}
+
+async function handleRecovery(event) {
+  event.preventDefault();
+  const cpf = onlyDigits($("recoveryCpf").value);
+
+  if (!isFirebaseConfigured) {
+    setFeedback($("authFeedback"), "Configure o Firebase em firebase.js.", "error");
+    return;
+  }
+
+  if (!isValidCpf(cpf)) {
+    setFeedback($("authFeedback"), "Informe um CPF válido.", "error");
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, cpfToEmail(cpf));
+  } catch (error) {
+    // Evita revelar se o CPF está cadastrado.
+  }
+
+  clearAuthFields();
+  setFeedback($("authFeedback"), "Se o CPF estiver cadastrado, a recuperação foi enviada.", "success");
 }
 
 async function createUserDocuments(uid, profile) {
@@ -388,7 +419,7 @@ function populateCategorySelects() {
 function renderCards(totals) {
   const hidden = app.preferences.hiddenValues;
   setCard("incomeTotal", totals.income, hidden.income);
-  setCard("expenseTotal", totals.expense, hidden.expense);
+  setCard("expenseTotal", totals.expense, false);
   setCard("investmentTotal", totals.investment, hidden.investment);
   setCard("balanceTotal", totals.balance, hidden.balance);
   document.querySelectorAll("[data-hide-card]").forEach((button) => {
@@ -477,6 +508,7 @@ function renderCharts(items) {
 
   renderCategoryChart(items);
   renderFlowChart(items);
+  renderMonthlyChart(items);
 }
 
 function renderCategoryChart(items) {
@@ -529,13 +561,56 @@ function renderFlowChart(items) {
   });
 }
 
+function renderMonthlyChart(items) {
+  const grouped = items.reduce((acc, item) => {
+    const month = item.date.slice(0, 7);
+    if (!acc[month]) {
+      acc[month] = { income: 0, expense: 0, investment: 0 };
+    }
+    if (item.type === "entrada") acc[month].income += Number(item.value);
+    if (item.type === "saida") acc[month].expense += Number(item.value);
+    if (item.type === "investimento") acc[month].investment += Number(item.value);
+    return acc;
+  }, {});
+  const labels = Object.keys(grouped).sort();
+
+  if (!window.Chart || !labels.length) {
+    $("monthlyChart").hidden = true;
+    $("monthlyChartEmpty").hidden = false;
+    return;
+  }
+
+  $("monthlyChart").hidden = false;
+  $("monthlyChartEmpty").hidden = true;
+  app.charts.monthly = new Chart($("monthlyChart"), {
+    type: "bar",
+    data: {
+      labels: labels.map(formatMonth),
+      datasets: [
+        { label: "Entradas", data: labels.map((label) => grouped[label].income), backgroundColor: "#34d399" },
+        { label: "Saídas", data: labels.map((label) => grouped[label].expense), backgroundColor: "#fb7185" },
+        { label: "Investimentos", data: labels.map((label) => grouped[label].investment), backgroundColor: "#a78bfa" }
+      ]
+    },
+    options: chartOptions("Mensal")
+  });
+}
+
 function chartOptions(title) {
   return {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { position: "bottom", labels: { color: getCss("--text") } },
-      tooltip: { callbacks: { label: (context) => `${context.label}: ${formatMoney(context.parsed || 0)}` } },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const parsed = typeof context.parsed === "object" ? context.parsed.y : context.parsed;
+            const label = context.dataset?.label || context.label;
+            return `${label}: ${formatMoney(parsed || 0)}`;
+          }
+        }
+      },
       title: { display: true, text: title, color: getCss("--text") }
     }
   };
@@ -867,6 +942,11 @@ async function exportPdf() {
   add(`Investido: ${pdfValue("investment", totals.investment, respectHidden)}`, 12, true);
   add(`Saldo: ${pdfValue("balance", totals.balance, respectHidden)}`, 12, true);
   y += 10;
+  add("Gráficos", 13, true);
+  addChartToPdf(docPdf, $("categoryChart"), "Gastos por categoria", margin, width, height, () => y, (nextY) => { y = nextY; });
+  addChartToPdf(docPdf, $("flowChart"), "Entradas vs saídas", margin, width, height, () => y, (nextY) => { y = nextY; });
+  addChartToPdf(docPdf, $("monthlyChart"), "Gráfico mensal", margin, width, height, () => y, (nextY) => { y = nextY; });
+  y += 10;
   add("Movimentações", 13, true);
 
   if (!result.items.length) {
@@ -888,8 +968,24 @@ function pdfValue(card, value, respectHidden) {
 }
 
 function pdfMovementValue(item, respectHidden) {
-  const card = item.type === "entrada" ? "income" : item.type === "saida" ? "expense" : "investment";
+  const card = item.type === "entrada" ? "income" : item.type === "saida" ? "" : "investment";
   return respectHidden && app.preferences.hiddenValues[card] ? mask : formatSignedMoney(item);
+}
+
+function addChartToPdf(docPdf, canvas, title, margin, width, height, getY, setY) {
+  if (!canvas || canvas.hidden) return;
+  let y = getY();
+  if (y + 210 > height - margin) {
+    docPdf.addPage();
+    y = margin;
+  }
+  docPdf.setFont("helvetica", "bold");
+  docPdf.setFontSize(11);
+  docPdf.text(title, margin, y);
+  y += 10;
+  const image = canvas.toDataURL("image/png", 1);
+  docPdf.addImage(image, "PNG", margin, y, width - margin * 2, 170);
+  setY(y + 190);
 }
 
 async function handleLogout() {
@@ -985,7 +1081,7 @@ function clearPasswords() {
 }
 
 function clearAuthFields() {
-  ["loginCpf", "loginPassword", "registerName", "registerCpf", "registerPhone", "registerPassword"].forEach((id) => {
+  ["loginCpf", "loginPassword", "registerName", "registerCpf", "registerPhone", "registerPassword", "recoveryCpf"].forEach((id) => {
     if ($(id)) $(id).value = "";
   });
 }
@@ -997,7 +1093,7 @@ function authErrorMessage(error) {
 }
 
 function cpfToEmail(cpf) {
-  return `${onlyDigits(cpf)}@cpf.financeiro.app`;
+  return `${onlyDigits(cpf)}@app.local`;
 }
 
 function emailToCpf(email = "") {
@@ -1046,6 +1142,11 @@ function formatDate(value) {
   if (!isValidDate(value)) return "";
   const [year, month, day] = value.split("-").map(Number);
   return dateFmt.format(new Date(year, month - 1, day));
+}
+
+function formatMonth(value) {
+  const [year, month] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("pt-BR", { month: "short", year: "2-digit" }).format(new Date(year, month - 1, 1));
 }
 
 function formatType(type) {
