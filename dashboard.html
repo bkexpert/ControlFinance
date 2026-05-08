@@ -50,7 +50,7 @@
           </div>
           <button class="icon-button" type="button" data-hide-card="investment" aria-label="Ocultar investimentos">Ver</button>
         </article>
-       <article class="finance-card balance-card" data-card="balance">
+      <article class="finance-card balance-card" data-card="balance">
   <div>
     <span>Saldo</span>
     <strong id="balanceTotal">R$ 0,00</strong>
@@ -61,6 +61,22 @@
     type="button"
     data-hide-card="balance"
     aria-label="Ocultar saldo"
+  >
+    Ver
+  </button>
+</article>
+
+<article class="finance-card expense-card" data-card="expense">
+  <div>
+    <span>Saídas</span>
+    <strong id="expenseTotal">R$ 0,00</strong>
+  </div>
+
+  <button
+    class="icon-button"
+    type="button"
+    data-hide-card="expense"
+    aria-label="Ocultar saídas"
   >
     Ver
   </button>
