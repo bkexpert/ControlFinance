@@ -434,7 +434,7 @@ function setCard(id, value, hidden) {
   $(id).textContent = hidden ? mask : formatMoney(value);
 }
 
-function renderMovements(items) {function renderMovements(items) {
+function renderMovements(items) {
   const list = $("movementsList");
   clear(list);
 
@@ -480,8 +480,9 @@ function renderMovements(items) {function renderMovements(items) {
       list.append(button);
     });
 
-    list.append(button);
+       list.append(button);
   }
+}
 
 function createMovementItem(movement) {
   const list = $("movementsList");
