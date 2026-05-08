@@ -434,55 +434,98 @@ function setCard(id, value, hidden) {
   $(id).textContent = hidden ? mask : formatMoney(value);
 }
 
-function renderMovements(items) {
+function renderMovements(items) {function renderMovements(items) {
   const list = $("movementsList");
   clear(list);
-  $("movementCount").textContent = `${items.length} ${items.length === 1 ? "item" : "itens"}`;
 
-  if (!items.length) {
+  const last7Days = items.filter((item) => {
+    const movementDate = new Date(item.date);
+    const now = new Date();
+    const diff = (now - movementDate) / (1000 * 60 * 60 * 24);
+    return diff <= 7;
+  });
+
+  const visibleItems = last7Days.slice(0, 5);
+
+  $("movementCount").textContent =
+    `${last7Days.length} ${last7Days.length === 1 ? "item" : "itens"}`;
+
+  if (!last7Days.length) {
     list.append(empty("Nenhuma movimentação encontrada."));
     return;
   }
 
-  items.forEach((movement) => {
-    const item = document.createElement("article");
-    item.className = `list-item movement-item ${movement.type}`;
+  visibleItems.forEach(createMovementItem);
 
-    const info = document.createElement("div");
-    info.append(textEl("p", "item-title", movement.title));
-    info.append(textEl("p", "item-meta", `${formatDate(movement.date)} • ${formatType(movement.type)} • ${movement.category}`));
+  if (last7Days.length > 5) {
+    const button = document.createElement("button");
+    button.className = "primary-button";
+    button.textContent = "Ver todas dos últimos 7 dias";
 
-    const value = textEl("strong", "item-value", formatSignedMoney(movement));
+    let expanded = false;
 
-    const actions = document.createElement("div");
-    actions.className = "item-actions";
-    actions.append(actionButton("Editar", "edit", movement.id, "secondary-button"));
-    actions.append(actionButton("Excluir", "delete", movement.id, "danger-button"));
+    button.addEventListener("click", () => {
+      expanded = !expanded;
 
-    item.append(info, value, actions);
-    list.append(item);
+      clear(list);
+
+      const renderItems = expanded ? last7Days : visibleItems;
+
+      renderItems.forEach(createMovementItem);
+
+      button.textContent = expanded
+        ? "Mostrar menos"
+        : "Ver todas dos últimos 7 dias";
+
+      list.append(button);
+    });
+
+    list.append(button);
+  }
+}
   });
 }
 
-function renderFilterStatus(result) {
-  const status = $("filterStatus");
-  clear(status);
-  if (result.invalidPeriod) {
-    status.append(chip("Período inválido", "warning"));
-    return;
-  }
+function renderFilterStatus(result) {function createMovementItem(movement) {
+  const list = $("movementsList");
 
-  const filters = app.preferences.filters;
-  const chips = [];
-  if (filters.types.length) chips.push(`Tipo: ${filters.types.map(formatType).join(" e ")}`);
-  if (filters.category) chips.push(`Categoria: ${filters.category}`);
-  if (filters.start || filters.end) chips.push(`Período: ${periodText(filters)}`);
+  const item = document.createElement("article");
+  item.className = `list-item movement-item ${movement.type}`;
 
-  if (!chips.length) {
-    status.append(chip("Relatório geral"));
-    return;
-  }
-  chips.forEach((item) => status.append(chip(item, "active")));
+  const info = document.createElement("div");
+
+  info.append(
+    textEl("p", "item-title", movement.title)
+  );
+
+  info.append(
+    textEl(
+      "p",
+      "item-meta",
+      `${formatDate(movement.date)} • ${formatType(movement.type)} • ${movement.category}`
+    )
+  );
+
+  const value = textEl(
+    "strong",
+    "item-value",
+    formatSignedMoney(movement)
+  );
+
+  const actions = document.createElement("div");
+  actions.className = "item-actions";
+
+  actions.append(
+    actionButton("Editar", "edit", movement.id, "secondary-button")
+  );
+
+  actions.append(
+    actionButton("Excluir", "delete", movement.id, "danger-button")
+  );
+
+  item.append(info, value, actions);
+
+  list.append(item);
 }
 
 function renderReportSummary(items, totals) {
