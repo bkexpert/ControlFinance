@@ -816,3 +816,27 @@ select {
   max-height: 240px !important;
 }
 }
+/* tudo que já existe acima */
+
+.charts-horizontal {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.charts-horizontal .chart-box {
+  height: 260px;
+  min-height: 260px;
+}
+
+.charts-horizontal canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .charts-horizontal {
+    grid-template-columns: 1fr;
+  }
+}
