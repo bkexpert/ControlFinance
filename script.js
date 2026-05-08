@@ -457,31 +457,31 @@ function renderMovements(items) {
 
   visibleItems.forEach(createMovementItem);
 
-  if (last7Days.length > 5) {
-    const button = document.createElement("button");
-    button.className = "primary-button";
-    button.textContent = "Ver todas dos últimos 7 dias";
+ if (last7Days.length > 5) {
+  const button = document.createElement("button");
+  button.className = "primary-button";
+  button.textContent = "Ver todas dos últimos 7 dias";
 
-    let expanded = false;
+  let expanded = false;
 
-    button.addEventListener("click", () => {
-      expanded = !expanded;
+  button.addEventListener("click", () => {
+    expanded = !expanded;
 
-      clear(list);
+    clear(list);
 
-      const renderItems = expanded ? last7Days : visibleItems;
+    const renderItems = expanded ? last7Days : visibleItems;
 
-      renderItems.forEach(createMovementItem);
+    renderItems.forEach(createMovementItem);
 
-      button.textContent = expanded
-        ? "Mostrar menos"
-        : "Ver todas dos últimos 7 dias";
+    button.textContent = expanded
+      ? "Mostrar menos"
+      : "Ver todas dos últimos 7 dias";
 
-      list.append(button);
-    });
+    list.append(button);
+  });
 
-       list.append(button);
-  }
+  list.append(button);
+}
 }
 
 function createMovementItem(movement) {
