@@ -438,93 +438,63 @@ function renderMovements(items) {
   const list = $("movementsList");
   clear(list);
 
-  const last7Days = items.filter((item) => {
-    const movementDate = new Date(item.date);
-    const now = new Date();
-    const diff = (now - movementDate) / (1000 * 60 * 60 * 24);
-    return diff <= 7;
-  });
+  const sortedItems = [...items].sort((a, b) => b.date.localeCompare(a.date));
 
-  const visibleItems = last7Days.slice(0, 5);
+  $("movementCount").textContent = `${sortedItems.length} ${sortedItems.length === 1 ? "item" : "itens"}`;
 
-  $("movementCount").textContent =
-    `${last7Days.length} ${last7Days.length === 1 ? "item" : "itens"}`;
-
-  if (!last7Days.length) {
+  if (!sortedItems.length) {
     list.append(empty("Nenhuma movimentação encontrada."));
     return;
   }
 
-  visibleItems.forEach(createMovementItem);
-
- if (last7Days.length > 5) {
-  const button = document.createElement("button");
-  button.className = "primary-button";
-  button.textContent = "Ver todas dos últimos 7 dias";
-
-  let expanded = false;
-
-  button.addEventListener("click", () => {
-    expanded = !expanded;
-
-    clear(list);
-
-    const renderItems = expanded ? last7Days : visibleItems;
-
-    renderItems.forEach(createMovementItem);
-
-    button.textContent = expanded
-      ? "Mostrar menos"
-      : "Ver todas dos últimos 7 dias";
-
-    list.append(button);
+  sortedItems.forEach((movement) => {
+    list.append(createMovementItem(movement));
   });
-
-  list.append(button);
-}
 }
 
 function createMovementItem(movement) {
-  const list = $("movementsList");
-  
-
   const item = document.createElement("article");
   item.className = `list-item movement-item ${movement.type}`;
 
   const info = document.createElement("div");
 
-  info.append(
-    textEl("p", "item-title", movement.title)
-  );
+  info.append(textEl("p", "item-title", movement.title));
+  info.append(textEl("p", "item-meta", `${formatDate(movement.date)} • ${formatType(movement.type)} • ${movement.category}`));
 
-  info.append(
-    textEl(
-      "p",
-      "item-meta",
-      `${formatDate(movement.date)} • ${formatType(movement.type)} • ${movement.category}`
-    )
-  );
-
-  const value = textEl(
-    "strong",
-    "item-value",
-    formatSignedMoney(movement)
-  );
+  const value = textEl("strong", "item-value", formatSignedMoney(movement));
 
   const actions = document.createElement("div");
   actions.className = "item-actions";
 
-  actions.append(
-    actionButton("Editar", "edit", movement.id, "secondary-button")
-  );
-
-  actions.append(
-    actionButton("Excluir", "delete", movement.id, "danger-button")
-  );
+  actions.append(actionButton("Editar", "edit", movement.id, "secondary-button"));
+  actions.append(actionButton("Excluir", "delete", movement.id, "danger-button"));
 
   item.append(info, value, actions);
 
-  list.append(item);
+  return item;
+}
+
+function renderFilterStatus(result) {
+  const status = $("filterStatus");
+  const filters = app.preferences.filters;
+  clear(status);
+
+  if (result.invalidPeriod) {
+    status.append(chip("Período inválido", "warning"));
+    return;
+  }
+
+  const active = [];
+  if (filters.types.length) active.push(`Tipo: ${filters.types.map(formatType).join(" e ")}`);
+  if (filters.category) active.push(`Categoria: ${filters.category}`);
+  if (filters.start || filters.end) active.push(`Período: ${periodText(filters)}`);
+
+  if (!active.length) {
+    status.append(chip("Relatório geral"));
+    return;
+  }
+
+  active.forEach((text) => status.append(chip(text, "active")));
 }
 
 function renderReportSummary(items, totals) {
