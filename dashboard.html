@@ -56,13 +56,21 @@
           </div>
           <button class="icon-button" type="button" data-hide-card="investment" aria-label="Ocultar investimentos">Ver</button>
         </article>
-        <article class="finance-card balance-card" data-card="balance">
-          <div>
-            <span>Saldo</span>
-            <strong id="balanceTotal">R$ 0,00</strong>
-          </div>
-          <button class="icon-button" type="button" data-hide-card="balance" aria-label="Ocultar saldo">Ver</button>
-        </article>
+       <article class="finance-card expense-card" data-card="expense">
+  <div>
+    <span>Saídas</span>
+    <strong id="expenseTotal">R$ 0,00</strong>
+  </div>
+
+  <button
+    class="icon-button"
+    type="button"
+    data-hide-card="expense"
+    aria-label="Ocultar saídas"
+  >
+    Ver
+  </button>
+</article>
       </section>
 
       <div class="dashboard-grid">
@@ -159,29 +167,6 @@
           </div>
           <div id="movementsList" class="list-stack" aria-live="polite"></div>
         </section>
-
-        <section id="chartsPanel" class="panel" aria-labelledby="chartsTitle">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Gráficos</p>
-              <h2 id="chartsTitle">Análise visual</h2>
-            </div>
-          </div>
-          <div class="chart-grid">
-            <div class="chart-box">
-              <canvas id="categoryChart" aria-label="Gastos por categoria"></canvas>
-              <p id="categoryChartEmpty" class="empty-state">Sem dados de gastos.</p>
-            </div>
-            <div class="chart-box">
-              <canvas id="flowChart" aria-label="Entradas versus saídas"></canvas>
-              <p id="flowChartEmpty" class="empty-state">Sem dados comparativos.</p>
-            </div>
-            <div class="chart-box">
-              <canvas id="monthlyChart" aria-label="Gráfico mensal"></canvas>
-              <p id="monthlyChartEmpty" class="empty-state">Sem dados mensais.</p>
-            </div>
-          </div>
-        </section>
       </div>
 
       <section class="panel" aria-labelledby="chartsTitle">
@@ -213,23 +198,6 @@
         Sem dados mensais.
       </p>
     </div>
-  </div>
-</section>
-
-<section class="panel" aria-labelledby="historyTitle">
-  <div class="panel-heading">
-    <div>
-      <p class="eyebrow">Histórico</p>
-      <h2 id="historyTitle">Últimas movimentações</h2>
-    </div>
-  </div>
-
-  <div id="movementsList"></div>
-
-  <div class="history-actions">
-    <button id="toggleHistoryBtn" class="secondary-button" type="button">
-      Ver todas dos últimos 7 dias
-    </button>
   </div>
 </section>
 
