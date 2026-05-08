@@ -9,11 +9,14 @@
 </head>
 <body data-page="settings">
   <div class="app-layout">
-    <aside class="sidebar">
-      <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
-        <span class="brand-mark" aria-hidden="true">FP</span>
-        <span>Finance Pro</span>
-      </a>
+    <aside class="sidebar" aria-label="Menu lateral">
+      <div class="sidebar-header">
+        <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
+          <span class="brand-mark" aria-hidden="true">FP</span>
+          <span class="brand-text">Finance Pro</span>
+        </a>
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Ocultar menu lateral" aria-expanded="true">☰</button>
+      </div>
       <nav class="side-nav" aria-label="Navegação principal">
         <a href="dashboard.html">Dashboard</a>
         <a class="active" href="settings.html" aria-current="page">Opções</a>
@@ -26,10 +29,6 @@
         <div>
           <p class="eyebrow">Opções</p>
           <h1 id="settingsProfileName">Carregando...</h1>
-        </div>
-        <div class="topbar-actions">
-          <a class="secondary-link" href="dashboard.html">Dashboard</a>
-          <button id="mobileLogoutBtn" class="ghost-button" type="button">Sair</button>
         </div>
       </header>
 

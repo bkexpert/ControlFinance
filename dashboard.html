@@ -12,10 +12,13 @@
 <body data-page="dashboard">
   <div class="app-layout">
     <aside class="sidebar" aria-label="Menu lateral">
-      <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
-        <span class="brand-mark" aria-hidden="true">FP</span>
-        <span>Finance Pro</span>
-      </a>
+      <div class="sidebar-header">
+        <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
+          <span class="brand-mark" aria-hidden="true">FP</span>
+          <span class="brand-text">Finance Pro</span>
+        </a>
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Ocultar menu lateral" aria-expanded="true">☰</button>
+      </div>
 
       <nav class="side-nav" aria-label="Navegação principal">
         <a class="active" href="dashboard.html" aria-current="page">Dashboard</a>
@@ -34,8 +37,6 @@
 
         <div class="topbar-actions">
           <button id="dashboardThemeToggle" class="secondary-button" type="button" aria-label="Alternar tema">Tema claro</button>
-          <a class="secondary-link" href="settings.html">Opções</a>
-          <button id="mobileLogoutBtn" class="ghost-button" type="button">Sair</button>
         </div>
       </header>
 
@@ -193,17 +194,17 @@
           </div>
 
           <div class="charts-grid">
-            <div class="chart-box">
+            <div class="chart-box" data-chart-box="category">
               <canvas id="categoryChart" aria-label="Gastos por categoria"></canvas>
               <p id="categoryChartEmpty" class="empty-state">Sem dados de categorias.</p>
             </div>
 
-            <div class="chart-box">
+            <div class="chart-box" data-chart-box="flow">
               <canvas id="flowChart" aria-label="Entradas versus saídas"></canvas>
               <p id="flowChartEmpty" class="empty-state">Sem dados de fluxo.</p>
             </div>
 
-            <div class="chart-box">
+            <div class="chart-box" data-chart-box="monthly">
               <canvas id="monthlyChart" aria-label="Gráfico mensal"></canvas>
               <p id="monthlyChartEmpty" class="empty-state">Sem dados mensais.</p>
             </div>

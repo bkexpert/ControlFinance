@@ -29,6 +29,7 @@ import {
 const page = document.body.dataset.page;
 const mask = "••••••••";
 const THEME_STORAGE_KEY = "finance-pro-theme";
+const SIDEBAR_STORAGE_KEY = "finance-pro-sidebar-collapsed";
 const defaultCategories = ["Salário", "Alimentação", "Transporte", "Moradia", "Saúde", "Lazer", "Educação", "Investimentos", "Outros"];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -50,6 +51,7 @@ const app = {
 const $ = (id) => document.getElementById(id);
 
 document.documentElement.dataset.theme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+document.body.classList.toggle("sidebar-collapsed", localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
 
 if (page === "login") {
   initLoginPage();
@@ -116,6 +118,8 @@ function initProtectedPage() {
 function bindSharedEvents() {
   $("logoutBtn")?.addEventListener("click", handleLogout);
   $("mobileLogoutBtn")?.addEventListener("click", handleLogout);
+  $("sidebarToggle")?.addEventListener("click", toggleSidebar);
+  updateSidebarToggle();
 
   if (page === "dashboard") {
     bindDashboardEvents();
@@ -124,6 +128,24 @@ function bindSharedEvents() {
   if (page === "settings") {
     bindSettingsEvents();
   }
+}
+
+function toggleSidebar() {
+  const collapsed = !document.body.classList.contains("sidebar-collapsed");
+  document.body.classList.toggle("sidebar-collapsed", collapsed);
+  localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
+  updateSidebarToggle();
+  requestAnimationFrame(() => {
+    Object.values(app.charts).forEach((chart) => chart?.resize());
+  });
+}
+
+function updateSidebarToggle() {
+  const button = $("sidebarToggle");
+  if (!button) return;
+  const collapsed = document.body.classList.contains("sidebar-collapsed");
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.setAttribute("aria-label", collapsed ? "Mostrar menu lateral" : "Ocultar menu lateral");
 }
 
 function bindDashboardEvents() {
@@ -541,13 +563,11 @@ function renderCategoryChart(items) {
   const data = Object.values(grouped);
 
   if (!window.Chart || !labels.length) {
-    $("categoryChart").hidden = true;
-    $("categoryChartEmpty").hidden = false;
+    setChartVisibility("category", false);
     return;
   }
 
-  $("categoryChart").hidden = false;
-  $("categoryChartEmpty").hidden = true;
+  setChartVisibility("category", true);
   app.charts.category = new Chart($("categoryChart"), {
     type: "doughnut",
     data: {
@@ -563,13 +583,11 @@ function renderFlowChart(items) {
   const labels = Object.keys(grouped).sort();
 
   if (!window.Chart || !labels.length) {
-    $("flowChart").hidden = true;
-    $("flowChartEmpty").hidden = false;
+    setChartVisibility("flow", false);
     return;
   }
 
-  $("flowChart").hidden = false;
-  $("flowChartEmpty").hidden = true;
+  setChartVisibility("flow", true);
   app.charts.flow = new Chart($("flowChart"), {
     type: "bar",
     data: {
@@ -613,13 +631,11 @@ function renderMonthlyChart(items) {
   const labels = Object.keys(grouped).sort();
 
   if (!window.Chart || !labels.length) {
-    $("monthlyChart").hidden = true;
-    $("monthlyChartEmpty").hidden = false;
+    setChartVisibility("monthly", false);
     return;
   }
 
-  $("monthlyChart").hidden = false;
-  $("monthlyChartEmpty").hidden = true;
+  setChartVisibility("monthly", true);
   app.charts.monthly = new Chart($("monthlyChart"), {
     type: "line",
     data: {
@@ -639,6 +655,16 @@ function renderMonthlyChart(items) {
     },
     options: chartOptions("Evolução mensal", true)
   });
+}
+
+function setChartVisibility(name, hasData) {
+  const canvas = $(`${name}Chart`);
+  const empty = $(`${name}ChartEmpty`);
+  const box = document.querySelector(`[data-chart-box="${name}"]`);
+
+  if (canvas) canvas.hidden = !hasData;
+  if (empty) empty.hidden = hasData;
+  if (box) box.classList.toggle("chart-hidden", !hasData);
 }
 
 function chartOptions(title, cartesian = false) {
