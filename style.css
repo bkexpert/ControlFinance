@@ -361,6 +361,8 @@ input[type="checkbox"] {
 
 .topbar-actions {
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Dashboard */
@@ -379,6 +381,7 @@ input[type="checkbox"] {
   padding: 16px;
   border-top-width: 4px;
   overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .finance-card span {
@@ -459,10 +462,11 @@ input[type="checkbox"] {
 
 .filters-grid {
   display: grid;
-  grid-template-columns: minmax(170px, 0.9fr) repeat(3, minmax(130px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   align-items: start;
   margin-bottom: 14px;
+  min-width: 0;
 }
 
 .checkbox-group {
@@ -498,6 +502,10 @@ input[type="checkbox"] {
 .report-panel {
   display: grid;
   gap: 14px;
+}
+
+.report-panel > * {
+  min-width: 0;
 }
 
 .chip-row {
@@ -537,9 +545,25 @@ input[type="checkbox"] {
 }
 
 .list-panel .list-stack {
-  max-height: 560px;
+  height: 286px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
+  scroll-behavior: smooth;
+  scrollbar-color: rgba(96, 165, 250, 0.42) transparent;
+  scrollbar-width: thin;
+}
+
+.list-panel .list-stack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.list-panel .list-stack::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list-panel .list-stack::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.34);
+  border-radius: 999px;
 }
 
 .list-item {
@@ -598,13 +622,13 @@ input[type="checkbox"] {
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.3fr) minmax(260px, 1fr);
   gap: 14px;
 }
 
 .chart-box {
-  min-height: 280px;
-  height: 280px;
+  min-height: 300px;
+  height: 300px;
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
@@ -617,7 +641,7 @@ input[type="checkbox"] {
 .chart-box canvas {
   width: 100% !important;
   height: 100% !important;
-  max-height: 240px;
+  max-height: 260px;
 }
 
 .chart-box .empty-state {
@@ -656,9 +680,33 @@ input[type="checkbox"] {
   font-size: 1.08rem;
 }
 
-/* Configurações */
+/* Opções */
 .settings-list {
   margin-top: 16px;
+}
+
+.compact-panel {
+  align-self: start;
+}
+
+.compact-panel .form-stack {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.compact-panel .button-row {
+  align-self: end;
+}
+
+.compact-panel .settings-list,
+.compact-panel .list-stack {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.report-summary-panel {
+  grid-column: 1 / -1;
 }
 
 .danger-panel {

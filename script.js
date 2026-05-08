@@ -28,6 +28,7 @@ import {
 
 const page = document.body.dataset.page;
 const mask = "••••••••";
+const THEME_STORAGE_KEY = "finance-pro-theme";
 const defaultCategories = ["Salário", "Alimentação", "Transporte", "Moradia", "Saúde", "Lazer", "Educação", "Investimentos", "Outros"];
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -48,7 +49,7 @@ const app = {
 
 const $ = (id) => document.getElementById(id);
 
-document.documentElement.dataset.theme = "dark";
+document.documentElement.dataset.theme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
 
 if (page === "login") {
   initLoginPage();
@@ -61,6 +62,7 @@ function getDefaultPreferences() {
     theme: "dark",
     hiddenValues: {
       income: false,
+      expense: false,
       investment: false,
       balance: false
     },
@@ -131,6 +133,10 @@ function bindDashboardEvents() {
   $("clearFiltersBtn").addEventListener("click", clearFilters);
   $("exportPdfBtn").addEventListener("click", exportPdf);
   $("pdfRespectHidden").addEventListener("change", (event) => updatePreferences({ exportRespectHidden: event.target.checked }));
+  $("dashboardThemeToggle").addEventListener("click", () => {
+    const currentTheme = app.preferences.theme || document.documentElement.dataset.theme;
+    updatePreferences({ theme: currentTheme === "light" ? "dark" : "light" });
+  });
   document.querySelectorAll("[data-hide-card]").forEach((button) => {
     button.addEventListener("click", () => toggleCardPrivacy(button.dataset.hideCard));
   });
@@ -148,16 +154,6 @@ function bindSettingsEvents() {
   $("showChartsToggle").addEventListener("change", (event) => updatePreferences({ showCharts: event.target.checked }));
   $("showCardsToggle").addEventListener("change", (event) => updatePreferences({ showCards: event.target.checked }));
   $("exportHiddenToggle").addEventListener("change", (event) => updatePreferences({ exportRespectHidden: event.target.checked }));
-  document.querySelectorAll("[data-privacy]").forEach((input) => {
-    input.addEventListener("change", () => {
-      updatePreferences({
-        hiddenValues: {
-          ...app.preferences.hiddenValues,
-          [input.dataset.privacy]: input.checked
-        }
-      });
-    });
-  });
   $("exportJsonBtn").addEventListener("click", exportJson);
   $("clearDataBtn").addEventListener("click", clearFinancialData);
   $("deleteAccountBtn").addEventListener("click", deleteAccount);
@@ -375,9 +371,9 @@ function renderDashboard() {
   renderCards(totals);
   renderMovements(result.items);
   renderFilterStatus(result);
-  renderReportSummary(result.items, totals);
   renderCharts(result.items);
   $("pdfRespectHidden").checked = Boolean(app.preferences.exportRespectHidden);
+  updateThemeControls();
 }
 
 function renderSettings() {
@@ -386,14 +382,26 @@ function renderSettings() {
   $("showChartsToggle").checked = Boolean(app.preferences.showCharts);
   $("showCardsToggle").checked = Boolean(app.preferences.showCards);
   $("exportHiddenToggle").checked = Boolean(app.preferences.exportRespectHidden);
-  document.querySelectorAll("[data-privacy]").forEach((input) => {
-    input.checked = Boolean(app.preferences.hiddenValues[input.dataset.privacy]);
-  });
   renderCategories();
+  const result = getFilteredMovements();
+  renderReportSummary(result.items, calculateTotals(result.items));
+  updateThemeControls();
 }
 
 function applyTheme() {
-  document.documentElement.dataset.theme = app.preferences.theme || "dark";
+  const theme = app.preferences.theme || localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+}
+
+function updateThemeControls() {
+  const isLight = document.documentElement.dataset.theme === "light";
+  if ($("dashboardThemeToggle")) {
+    $("dashboardThemeToggle").textContent = isLight ? "Tema escuro" : "Tema claro";
+  }
+  if ($("themeToggle")) {
+    $("themeToggle").checked = isLight;
+  }
 }
 
 function populateCategorySelects() {
@@ -402,7 +410,7 @@ function populateCategorySelects() {
   const currentMovement = movementSelect.value;
   const currentFilter = app.preferences.filters.category || "";
   const categoryNames = getAllCategoryNames();
-  const movementOptions = [["", app.categories.length ? "Selecione" : "Crie uma categoria em Configurações"], ...app.categories.map((cat) => [cat.name, cat.name])];
+  const movementOptions = [["", app.categories.length ? "Selecione" : "Crie uma categoria em Opções"], ...app.categories.map((cat) => [cat.name, cat.name])];
 
   if (currentMovement && !app.categories.some((category) => category.name === currentMovement) && categoryNames.includes(currentMovement)) {
     movementOptions.push([currentMovement, `${currentMovement} (removida)`]);
@@ -419,7 +427,7 @@ function populateCategorySelects() {
 function renderCards(totals) {
   const hidden = app.preferences.hiddenValues;
   setCard("incomeTotal", totals.income, hidden.income);
-  setCard("expenseTotal", totals.expense, false);
+  setCard("expenseTotal", totals.expense, hidden.expense);
   setCard("investmentTotal", totals.investment, hidden.investment);
   setCard("balanceTotal", totals.balance, hidden.balance);
   document.querySelectorAll("[data-hide-card]").forEach((button) => {
@@ -551,11 +559,10 @@ function renderCategoryChart(items) {
 }
 
 function renderFlowChart(items) {
-  const totals = calculateTotals(items);
-  const labels = ["Entradas", "Saídas", "Investimentos"];
-  const data = [totals.income, totals.expense, totals.investment];
+  const grouped = groupMovementsByMonth(items);
+  const labels = Object.keys(grouped).sort();
 
-  if (!window.Chart || data.every((value) => value <= 0)) {
+  if (!window.Chart || !labels.length) {
     $("flowChart").hidden = true;
     $("flowChartEmpty").hidden = false;
     return;
@@ -564,26 +571,45 @@ function renderFlowChart(items) {
   $("flowChart").hidden = false;
   $("flowChartEmpty").hidden = true;
   app.charts.flow = new Chart($("flowChart"), {
-    type: "pie",
+    type: "bar",
     data: {
-      labels,
-      datasets: [{ data, backgroundColor: ["#34d399", "#fb7185", "#a78bfa"], borderColor: getCss("--surface"), borderWidth: 2 }]
+      labels: labels.map(formatMonth),
+      datasets: [
+        {
+          type: "bar",
+          label: "Entradas",
+          data: labels.map((label) => grouped[label].income),
+          backgroundColor: "rgba(52, 211, 153, 0.72)",
+          borderRadius: 8,
+          borderSkipped: false
+        },
+        {
+          type: "bar",
+          label: "Saídas",
+          data: labels.map((label) => grouped[label].expense),
+          backgroundColor: "rgba(251, 113, 133, 0.72)",
+          borderRadius: 8,
+          borderSkipped: false
+        },
+        {
+          type: "line",
+          label: "Fluxo líquido",
+          data: labels.map((label) => grouped[label].income - grouped[label].expense - grouped[label].investment),
+          borderColor: "#60a5fa",
+          backgroundColor: "rgba(96, 165, 250, 0.16)",
+          borderWidth: 3,
+          pointRadius: 3,
+          tension: 0.38,
+          fill: true
+        }
+      ]
     },
-    options: chartOptions("Fluxo")
+    options: chartOptions("Entradas x saídas mensais", true)
   });
 }
 
 function renderMonthlyChart(items) {
-  const grouped = items.reduce((acc, item) => {
-    const month = item.date.slice(0, 7);
-    if (!acc[month]) {
-      acc[month] = { income: 0, expense: 0, investment: 0 };
-    }
-    if (item.type === "entrada") acc[month].income += Number(item.value);
-    if (item.type === "saida") acc[month].expense += Number(item.value);
-    if (item.type === "investimento") acc[month].investment += Number(item.value);
-    return acc;
-  }, {});
+  const grouped = groupMovementsByMonth(items);
   const labels = Object.keys(grouped).sort();
 
   if (!window.Chart || !labels.length) {
@@ -595,21 +621,28 @@ function renderMonthlyChart(items) {
   $("monthlyChart").hidden = false;
   $("monthlyChartEmpty").hidden = true;
   app.charts.monthly = new Chart($("monthlyChart"), {
-    type: "bar",
+    type: "line",
     data: {
       labels: labels.map(formatMonth),
       datasets: [
-        { label: "Entradas", data: labels.map((label) => grouped[label].income), backgroundColor: "#34d399" },
-        { label: "Saídas", data: labels.map((label) => grouped[label].expense), backgroundColor: "#fb7185" },
-        { label: "Investimentos", data: labels.map((label) => grouped[label].investment), backgroundColor: "#a78bfa" }
+        {
+          label: "Evolução do saldo mensal",
+          data: labels.map((label) => grouped[label].income - grouped[label].expense - grouped[label].investment),
+          borderColor: "#a78bfa",
+          backgroundColor: "rgba(167, 139, 250, 0.16)",
+          borderWidth: 3,
+          pointRadius: 3,
+          fill: true,
+          tension: 0.38
+        }
       ]
     },
-    options: chartOptions("Mensal")
+    options: chartOptions("Evolução mensal", true)
   });
 }
 
-function chartOptions(title) {
-  return {
+function chartOptions(title, cartesian = false) {
+  const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -626,6 +659,38 @@ function chartOptions(title) {
       title: { display: true, text: title, color: getCss("--text") }
     }
   };
+
+  if (cartesian) {
+    options.scales = {
+      x: {
+        grid: { color: "rgba(148, 163, 184, 0.12)" },
+        ticks: { color: getCss("--muted") }
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: "rgba(148, 163, 184, 0.12)" },
+        ticks: {
+          color: getCss("--muted"),
+          callback: (value) => formatMoney(value)
+        }
+      }
+    };
+  }
+
+  return options;
+}
+
+function groupMovementsByMonth(items) {
+  return items.reduce((acc, item) => {
+    const month = item.date.slice(0, 7);
+    if (!acc[month]) {
+      acc[month] = { income: 0, expense: 0, investment: 0 };
+    }
+    if (item.type === "entrada") acc[month].income += Number(item.value);
+    if (item.type === "saida") acc[month].expense += Number(item.value);
+    if (item.type === "investimento") acc[month].investment += Number(item.value);
+    return acc;
+  }, {});
 }
 
 async function saveMovement(event) {
@@ -980,7 +1045,7 @@ function pdfValue(card, value, respectHidden) {
 }
 
 function pdfMovementValue(item, respectHidden) {
-  const card = item.type === "entrada" ? "income" : item.type === "saida" ? "" : "investment";
+  const card = item.type === "entrada" ? "income" : item.type === "saida" ? "expense" : "investment";
   return respectHidden && app.preferences.hiddenValues[card] ? mask : formatSignedMoney(item);
 }
 
