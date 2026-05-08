@@ -482,12 +482,11 @@ function renderMovements(items) {function renderMovements(items) {
 
     list.append(button);
   }
-}
-  });
-}
 
-function renderFilterStatus(result) {function createMovementItem(movement) {
+function createMovementItem(movement) {
   const list = $("movementsList");
+  
+  function renderFilterStatus(result) {
 
   const item = document.createElement("article");
   item.className = `list-item movement-item ${movement.type}`;
