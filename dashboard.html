@@ -75,49 +75,41 @@
 
       <div class="dashboard-grid">
         <section id="chartsPanel" class="panel" aria-labelledby="chartsTitle">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Nova movimentação</p>
-              <h2 id="movementTitle">Registrar valor</h2>
-            </div>
-          </div>
-          <form id="movementForm" class="form-stack">
-            <input id="movementId" type="hidden">
-            <label>
-              <span>Título</span>
-              <input id="movementName" type="text" maxlength="90" required>
-            </label>
-            <div class="form-row">
-              <label>
-                <span>Valor</span>
-                <input id="movementValue" type="number" min="0" step="0.01" inputmode="decimal" required>
-              </label>
-              <label>
-                <span>Tipo</span>
-                <select id="movementType" required>
-                  <option value="entrada">Entrada</option>
-                  <option value="saida">Saída</option>
-                  <option value="investimento">Investimento</option>
-                </select>
-              </label>
-            </div>
-            <div class="form-row">
-              <label>
-                <span>Categoria</span>
-                <select id="movementCategory" required></select>
-              </label>
-              <label>
-                <span>Data</span>
-                <input id="movementDate" type="date">
-              </label>
-            </div>
-            <div class="button-row">
-              <button id="saveMovementBtn" class="primary-button" type="submit">Salvar</button>
-              <button id="cancelMovementEditBtn" class="secondary-button hidden" type="button">Cancelar</button>
-            </div>
-            <p id="movementFeedback" class="feedback" role="status" aria-live="polite"></p>
-          </form>
-        </section>
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Análise visual</p>
+      <h2 id="chartsTitle">Gráficos financeiros</h2>
+    </div>
+  </div>
+
+  <div class="charts-horizontal">
+
+    <div class="chart-box">
+      <canvas id="categoryChart"></canvas>
+
+      <p id="categoryChartEmpty" class="empty-state hidden">
+        Sem dados de categorias.
+      </p>
+    </div>
+
+    <div class="chart-box">
+      <canvas id="flowChart"></canvas>
+
+      <p id="flowChartEmpty" class="empty-state hidden">
+        Sem dados de fluxo.
+      </p>
+    </div>
+
+    <div class="chart-box">
+      <canvas id="monthlyChart"></canvas>
+
+      <p id="monthlyChartEmpty" class="empty-state hidden">
+        Sem dados mensais.
+      </p>
+    </div>
+
+  </div>
+</section>
 
         <section class="panel report-panel" aria-labelledby="reportTitle">
           <div class="panel-heading">
