@@ -793,6 +793,9 @@ async function saveMovement(event) {
       toast("Movimentação criada.", "success");
     }
     resetMovementForm();
+    if (page === "movement") {
+      window.location.href = "dashboard.html";
+    }
   } catch (error) {
     setFeedback($("movementFeedback"), "Não foi possível salvar.", "error");
   }
@@ -836,7 +839,7 @@ function resetMovementForm() {
   $("movementForm").reset();
   $("movementId").value = "";
   $("movementDate").value = today();
-  $("saveMovementBtn").textContent = "Salvar";
+  $("saveMovementBtn").textContent = "Salvar movimentação";
   $("cancelMovementEditBtn").classList.add("hidden");
   setFeedback($("movementFeedback"), "");
   populateCategorySelects();

@@ -19,9 +19,18 @@
       </div>
 
       <nav class="side-nav" aria-label="Navegação principal">
-        <a href="dashboard.html">Dashboard</a>
-        <a class="active" href="movement.html" aria-current="page">Nova movimentação</a>
-        <a href="settings.html">Opções</a>
+        <a class="nav-link" href="dashboard.html" aria-label="Dashboard" title="Dashboard">
+          <span class="nav-icon" aria-hidden="true">D</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <a class="nav-link active" href="movement.html" aria-current="page" aria-label="Nova movimentação" title="Nova movimentação">
+          <span class="nav-icon" aria-hidden="true">+</span>
+          <span class="nav-label">Nova movimentação</span>
+        </a>
+        <a class="nav-link" href="settings.html" aria-label="Opções" title="Opções">
+          <span class="nav-icon" aria-hidden="true">O</span>
+          <span class="nav-label">Opções</span>
+        </a>
       </nav>
 
       <button id="logoutBtn" class="ghost-button sidebar-logout" type="button">Sair</button>
