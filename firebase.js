@@ -6,28 +6,28 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
+  deleteUser,
+  updateProfile,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  updatePassword,
-  onAuthStateChanged,
-  deleteUser
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
   getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  setDoc,
   doc,
+  collection,
+  query,
+  orderBy,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
   updateDoc,
   deleteDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp,
-  onSnapshot
+  writeBatch,
+  onSnapshot,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -38,6 +38,11 @@ const firebaseConfig = {
   messagingSenderId: "417634398972",
   appId: "1:417634398972:web:c8d323c783e49dc49c1d79"
 };
+
+const isFirebaseConfigured =
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId;
 
 const app = initializeApp(firebaseConfig);
 
@@ -50,28 +55,29 @@ console.log("Firebase conectado com sucesso!");
 export {
   auth,
   db,
+  isFirebaseConfigured,
 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  onAuthStateChanged,
   signOut,
+  deleteUser,
+  updateProfile,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  updatePassword,
-  onAuthStateChanged,
-  deleteUser,
 
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  setDoc,
   doc,
+  collection,
+  query,
+  orderBy,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
   updateDoc,
   deleteDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp,
-  onSnapshot
+  writeBatch,
+  onSnapshot,
+  serverTimestamp
 };
