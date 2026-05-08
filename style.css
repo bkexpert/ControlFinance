@@ -772,7 +772,10 @@ input[type="checkbox"] {
 }
 
 .chart-grid {
-  grid-template-columns: 1fr;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: start;
 }
 
 .chart-box {
@@ -800,4 +803,12 @@ select {
   .filters-grid {
     grid-template-columns: 1fr;
   }
+
+.chart-card {
+  height: 320px;
+}
+
+.chart-card canvas {
+  max-height: 240px !important;
+}
 }
