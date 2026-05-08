@@ -56,7 +56,21 @@
           </div>
           <button class="icon-button" type="button" data-hide-card="investment" aria-label="Ocultar investimentos">Ver</button>
         </article>
-       <article class="finance-card expense-card" data-card="expense">
+       <article class="finance-card balance-card" data-card="balance">
+  <div>
+    <span>Saldo</span>
+    <strong id="balanceTotal">R$ 0,00</strong>
+  </div>
+
+  <button
+    class="icon-button"
+    type="button"
+    data-hide-card="balance"
+    aria-label="Ocultar saldo"
+  >
+    Ver
+  </button>
+</article>
   <div>
     <span>Saídas</span>
     <strong id="expenseTotal">R$ 0,00</strong>
@@ -112,50 +126,56 @@
         </section>
       </div>
 
-      <div class="dashboard-grid">
-        <section class="panel" aria-labelledby="historyTitle">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Histórico</p>
-              <h2 id="historyTitle">Movimentações</h2>
-            </div>
-            <span id="movementCount" class="count-pill">0 itens</span>
-          </div>
-          <div id="movementsList" class="list-stack" aria-live="polite"></div>
-        </section>
+     <div class="dashboard-grid">
+
+  <section class="panel" aria-labelledby="historyTitle">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Histórico</p>
+        <h2 id="historyTitle">Movimentações</h2>
       </div>
 
-      <section class="panel" aria-labelledby="chartsTitle">
-  <div class="panel-heading">
-    <div>
-      <p class="eyebrow">Análise visual</p>
-      <h2 id="chartsTitle">Gráficos financeiros</h2>
-    </div>
-  </div>
-
-  <div class="charts-horizontal">
-    <div class="chart-box">
-      <canvas id="categoryChart"></canvas>
-      <p id="categoryChartEmpty" class="empty-state hidden">
-        Sem dados de categorias.
-      </p>
+      <span id="movementCount" class="count-pill">0 itens</span>
     </div>
 
-    <div class="chart-box">
-      <canvas id="flowChart"></canvas>
-      <p id="flowChartEmpty" class="empty-state hidden">
-        Sem dados de fluxo.
-      </p>
+    <div id="movementsList" class="list-stack" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="chartsTitle">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Análise visual</p>
+        <h2 id="chartsTitle">Gráficos financeiros</h2>
+      </div>
     </div>
 
-    <div class="chart-box">
-      <canvas id="monthlyChart"></canvas>
-      <p id="monthlyChartEmpty" class="empty-state hidden">
-        Sem dados mensais.
-      </p>
+    <div class="charts-horizontal">
+
+      <div class="chart-box">
+        <canvas id="categoryChart"></canvas>
+        <p id="categoryChartEmpty" class="empty-state hidden">
+          Sem dados de categorias.
+        </p>
+      </div>
+
+      <div class="chart-box">
+        <canvas id="flowChart"></canvas>
+        <p id="flowChartEmpty" class="empty-state hidden">
+          Sem dados de fluxo.
+        </p>
+      </div>
+
+      <div class="chart-box">
+        <canvas id="monthlyChart"></canvas>
+        <p id="monthlyChartEmpty" class="empty-state hidden">
+          Sem dados mensais.
+        </p>
+      </div>
+
     </div>
-  </div>
-</section>
+  </section>
+
+</div>
 
 <section class="panel" aria-labelledby="summaryTitle">
   <div class="panel-heading">
