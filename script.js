@@ -793,9 +793,6 @@ async function saveMovement(event) {
       toast("Movimentação criada.", "success");
     }
     resetMovementForm();
-    if (page === "movement") {
-      window.location.href = "dashboard.html";
-    }
   } catch (error) {
     setFeedback($("movementFeedback"), "Não foi possível salvar.", "error");
   }
