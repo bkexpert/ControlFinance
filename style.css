@@ -840,3 +840,42 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+#chartsPanel {
+  height: 100%;
+}
+
+.charts-horizontal {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.charts-horizontal .chart-box {
+  height: 260px;
+  min-height: 260px;
+}
+
+.charts-horizontal canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 1000px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-horizontal {
+    grid-template-columns: 1fr;
+  }
+}
