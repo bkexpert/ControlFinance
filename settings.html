@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opções | Finance Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js"></script>
+</head>
+<body data-page="settings">
+  <div class="app-layout">
+    <aside class="sidebar" aria-label="Menu lateral">
+      <div class="sidebar-header">
+        <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
+          <span class="brand-mark" aria-hidden="true">FP</span>
+          <span class="brand-text">Finance Pro</span>
+        </a>
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Ocultar menu lateral" aria-expanded="true">☰</button>
+      </div>
+      <nav class="side-nav" aria-label="Navegação principal">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="movement.html">Nova movimentação</a>
+        <a class="active" href="settings.html" aria-current="page">Opções</a>
+      </nav>
+      <button id="logoutBtn" class="ghost-button sidebar-logout" type="button">Sair</button>
+    </aside>
+
+    <main class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Opções</p>
+          <h1 id="settingsProfileName">Carregando...</h1>
+        </div>
+      </header>
+
+      <div class="settings-grid">
+        <section class="panel compact-panel" aria-labelledby="categorySettingsTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Categorias</p>
+              <h2 id="categorySettingsTitle">Gerenciar categorias</h2>
+            </div>
+          </div>
+          <form id="categoryForm" class="form-stack">
+            <input id="categoryId" type="hidden">
+            <label>
+              <span>Nome da categoria</span>
+              <input id="categoryName" type="text" maxlength="60" required>
+            </label>
+            <div class="button-row">
+              <button id="saveCategoryBtn" class="primary-button" type="submit">Salvar categoria</button>
+              <button id="cancelCategoryEditBtn" class="secondary-button hidden" type="button">Cancelar</button>
+            </div>
+          </form>
+          <div id="categoriesList" class="list-stack settings-list" aria-live="polite"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="themeSettingsTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Preferências visuais</p>
+              <h2 id="themeSettingsTitle">Tema e privacidade</h2>
+            </div>
+          </div>
+          <div class="settings-stack">
+            <label class="switch-row">
+              <span>Tema claro</span>
+              <input id="themeToggle" type="checkbox">
+            </label>
+            <label class="switch-row">
+              <span>Mostrar gráficos</span>
+              <input id="showChartsToggle" type="checkbox">
+            </label>
+            <label class="switch-row">
+              <span>Mostrar cards financeiros</span>
+              <input id="showCardsToggle" type="checkbox">
+            </label>
+            <label class="switch-row">
+              <span>PDF respeita valores ocultos</span>
+              <input id="exportHiddenToggle" type="checkbox">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel report-summary-panel" aria-labelledby="summaryTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Resumo do relatório</p>
+              <h2 id="summaryTitle">Resultado atual</h2>
+            </div>
+          </div>
+          <div id="reportSummary" class="report-summary"></div>
+        </section>
+
+        <section class="panel danger-panel" aria-labelledby="dangerTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Conta e dados</p>
+              <h2 id="dangerTitle">Zona sensível</h2>
+            </div>
+          </div>
+          <div class="danger-actions">
+            <button id="exportJsonBtn" class="secondary-button" type="button">Exportar dados JSON</button>
+            <button id="clearDataBtn" class="danger-button" type="button">Limpar dados financeiros</button>
+            <button id="deleteAccountBtn" class="danger-button" type="button">Excluir conta</button>
+          </div>
+          <p class="feedback">A exclusão de conta remove perfil, categorias, movimentações, filtros e preferências.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="toastArea" class="toast-area" aria-live="polite"></div>
+</body>
+</html>
