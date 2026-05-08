@@ -125,6 +125,10 @@ function bindSharedEvents() {
     bindDashboardEvents();
   }
 
+  if (page === "movement") {
+    bindMovementEvents();
+  }
+
   if (page === "settings") {
     bindSettingsEvents();
   }
@@ -149,8 +153,6 @@ function updateSidebarToggle() {
 }
 
 function bindDashboardEvents() {
-  $("movementForm").addEventListener("submit", saveMovement);
-  $("cancelMovementEditBtn").addEventListener("click", resetMovementForm);
   $("movementsList").addEventListener("click", handleMovementListClick);
   $("clearFiltersBtn").addEventListener("click", clearFilters);
   $("exportPdfBtn").addEventListener("click", exportPdf);
@@ -166,6 +168,11 @@ function bindDashboardEvents() {
     $(id).addEventListener("input", saveFiltersFromUi);
     $(id).addEventListener("change", saveFiltersFromUi);
   });
+}
+
+function bindMovementEvents() {
+  $("movementForm").addEventListener("submit", saveMovement);
+  $("cancelMovementEditBtn").addEventListener("click", resetMovementForm);
 }
 
 function bindSettingsEvents() {
@@ -376,6 +383,9 @@ function renderCurrentPage() {
   if (page === "dashboard") {
     renderDashboard();
   }
+  if (page === "movement") {
+    renderMovementPage();
+  }
   if (page === "settings") {
     renderSettings();
   }
@@ -410,6 +420,25 @@ function renderSettings() {
   updateThemeControls();
 }
 
+function renderMovementPage() {
+  $("movementProfileName").textContent = app.profile?.name || app.user.displayName || "Registrar valor";
+  populateCategorySelects();
+
+  const editId = sessionStorage.getItem("finance-pro-edit-movement");
+  if (editId && !$("movementId").value) {
+    const movement = app.movements.find((item) => item.id === editId);
+    if (movement) {
+      startMovementEdit(movement);
+      sessionStorage.removeItem("finance-pro-edit-movement");
+      return;
+    }
+  }
+
+  if (!$("movementDate").value) {
+    $("movementDate").value = today();
+  }
+}
+
 function applyTheme() {
   const theme = app.preferences.theme || localStorage.getItem(THEME_STORAGE_KEY) || "dark";
   document.documentElement.dataset.theme = theme;
@@ -429,21 +458,25 @@ function updateThemeControls() {
 function populateCategorySelects() {
   const movementSelect = $("movementCategory");
   const filterSelect = $("filterCategory");
-  const currentMovement = movementSelect.value;
+  const currentMovement = movementSelect ? movementSelect.value : "";
   const currentFilter = app.preferences.filters.category || "";
   const categoryNames = getAllCategoryNames();
   const movementOptions = [["", app.categories.length ? "Selecione" : "Crie uma categoria em Opções"], ...app.categories.map((cat) => [cat.name, cat.name])];
 
-  if (currentMovement && !app.categories.some((category) => category.name === currentMovement) && categoryNames.includes(currentMovement)) {
+  if (movementSelect && currentMovement && !app.categories.some((category) => category.name === currentMovement) && categoryNames.includes(currentMovement)) {
     movementOptions.push([currentMovement, `${currentMovement} (removida)`]);
   }
 
-  replaceOptions(movementSelect, movementOptions);
-  movementSelect.value = movementOptions.some(([value]) => value === currentMovement) ? currentMovement : "";
-  movementSelect.disabled = app.categories.length === 0;
+  if (movementSelect) {
+    replaceOptions(movementSelect, movementOptions);
+    movementSelect.value = movementOptions.some(([value]) => value === currentMovement) ? currentMovement : "";
+    movementSelect.disabled = app.categories.length === 0;
+  }
 
-  replaceOptions(filterSelect, [["", "Todas as categorias"], ...categoryNames.map((name) => [name, name])]);
-  filterSelect.value = categoryNames.includes(currentFilter) ? currentFilter : "";
+  if (filterSelect) {
+    replaceOptions(filterSelect, [["", "Todas as categorias"], ...categoryNames.map((name) => [name, name])]);
+    filterSelect.value = categoryNames.includes(currentFilter) ? currentFilter : "";
+  }
 }
 
 function renderCards(totals) {
@@ -760,6 +793,9 @@ async function saveMovement(event) {
       toast("Movimentação criada.", "success");
     }
     resetMovementForm();
+    if (page === "movement") {
+      window.location.href = "dashboard.html";
+    }
   } catch (error) {
     setFeedback($("movementFeedback"), "Não foi possível salvar.", "error");
   }
@@ -773,14 +809,8 @@ function handleMovementListClick(event) {
   if (!movement) return;
 
   if (button.dataset.action === "edit") {
-    $("movementId").value = movement.id;
-    $("movementName").value = movement.title;
-    $("movementValue").value = Number(movement.value).toFixed(2);
-    $("movementType").value = movement.type;
-    $("movementCategory").value = movement.category;
-    $("movementDate").value = movement.date;
-    $("saveMovementBtn").textContent = "Atualizar";
-    $("cancelMovementEditBtn").classList.remove("hidden");
+    sessionStorage.setItem("finance-pro-edit-movement", movement.id);
+    window.location.href = "movement.html";
   }
 
   if (button.dataset.action === "delete") {
@@ -792,6 +822,17 @@ async function deleteMovement(movement) {
   if (!window.confirm(`Excluir a movimentação "${movement.title}"?`)) return;
   await deleteDoc(doc(db, "users", app.user.uid, "movements", movement.id));
   toast("Movimentação excluída.", "success");
+}
+
+function startMovementEdit(movement) {
+  $("movementId").value = movement.id;
+  $("movementName").value = movement.title;
+  $("movementValue").value = Number(movement.value).toFixed(2);
+  $("movementType").value = movement.type;
+  $("movementCategory").value = movement.category;
+  $("movementDate").value = movement.date;
+  $("saveMovementBtn").textContent = "Atualizar movimentação";
+  $("cancelMovementEditBtn").classList.remove("hidden");
 }
 
 function resetMovementForm() {
