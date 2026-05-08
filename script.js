@@ -484,7 +484,7 @@ function renderMovements(items) {
   }
 }
 
-function createMovementItem(movement) {
+function createMovementItem(movement)
   const list = $("movementsList");
   
 
