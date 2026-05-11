@@ -9,9 +9,9 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
   <script type="module" src="script.js"></script>
 </head>
-<body data-page="dashboard">
-  <div class="app-layout">
-    <aside class="sidebar" aria-label="Menu lateral">
+<body data-page="dashboard" class="dashboard-body">
+  <div class="app-layout dashboard-layout">
+    <aside class="sidebar dashboard-sidebar" aria-label="Menu lateral">
       <div class="sidebar-header">
         <a class="brand-link" href="dashboard.html" aria-label="Finance Pro">
           <span class="brand-mark" aria-hidden="true">FP</span>
@@ -22,15 +22,15 @@
 
       <nav class="side-nav" aria-label="Navegação principal">
         <a class="nav-link active" href="dashboard.html" aria-current="page" aria-label="Dashboard" title="Dashboard">
-          <span class="nav-icon" aria-hidden="true">D</span>
+          <span class="nav-icon" aria-hidden="true">⌂</span>
           <span class="nav-label">Dashboard</span>
         </a>
         <a class="nav-link" href="movement.html" aria-label="Nova movimentação" title="Nova movimentação">
-          <span class="nav-icon" aria-hidden="true">+</span>
+          <span class="nav-icon" aria-hidden="true">＋</span>
           <span class="nav-label">Nova movimentação</span>
         </a>
         <a class="nav-link" href="settings.html" aria-label="Opções" title="Opções">
-          <span class="nav-icon" aria-hidden="true">O</span>
+          <span class="nav-icon" aria-hidden="true">⚙</span>
           <span class="nav-label">Opções</span>
         </a>
       </nav>
@@ -38,118 +38,131 @@
       <button id="logoutBtn" class="ghost-button sidebar-logout" type="button">Sair</button>
     </aside>
 
-    <main class="page-shell">
-      <header class="topbar">
-        <div>
+    <main class="dashboard-main">
+      <header class="dashboard-hero">
+        <div class="hero-copy">
           <p class="eyebrow">Dashboard financeiro</p>
           <h1 id="profileName">Olá, Usuário!</h1>
           <p class="topbar-subtitle">Aqui está o resumo da sua vida financeira.</p>
         </div>
 
-        <div class="topbar-actions">
-          <button id="dashboardThemeToggle" class="secondary-button" type="button" aria-label="Alternar tema">Tema claro</button>
+        <div class="hero-actions">
+          <button id="dashboardThemeToggle" class="theme-chip" type="button" aria-label="Alternar tema">Tema claro</button>
           <span id="todayLabel" class="date-pill"></span>
         </div>
       </header>
 
-      <section id="cardsGrid" class="cards-grid" aria-label="Resumo financeiro">
+      <section id="cardsGrid" class="finance-overview" aria-label="Resumo financeiro">
         <article class="finance-card income-card" data-card="income">
-          <div>
+          <div class="card-topline">
             <span>Entradas</span>
-            <strong id="incomeTotal">R$ 0,00</strong>
+            <button class="icon-button" type="button" data-hide-card="income" aria-label="Ocultar entradas">Ver</button>
           </div>
-          <button class="icon-button" type="button" data-hide-card="income" aria-label="Ocultar entradas">Ocultar</button>
+          <strong id="incomeTotal">R$ 0,00</strong>
+          <div class="card-footer">
+            <span>Este mês</span>
+            <em class="trend trend-up">↑ 12.5%</em>
+          </div>
         </article>
 
         <article class="finance-card expense-card" data-card="expense">
-          <div>
+          <div class="card-topline">
             <span>Saídas</span>
-            <strong id="expenseTotal">R$ 0,00</strong>
+            <button class="icon-button" type="button" data-hide-card="expense" aria-label="Ocultar saídas">Ver</button>
           </div>
-          <button class="icon-button" type="button" data-hide-card="expense" aria-label="Ocultar saídas">Ocultar</button>
+          <strong id="expenseTotal">R$ 0,00</strong>
+          <div class="card-footer">
+            <span>Este mês</span>
+            <em class="trend trend-down">↓ 8.2%</em>
+          </div>
         </article>
 
         <article class="finance-card investment-card" data-card="investment">
-          <div>
-            <span>Investido</span>
-            <strong id="investmentTotal">R$ 0,00</strong>
+          <div class="card-topline">
+            <span>Investimentos</span>
+            <button class="icon-button" type="button" data-hide-card="investment" aria-label="Ocultar investimentos">Ver</button>
           </div>
-          <button class="icon-button" type="button" data-hide-card="investment" aria-label="Ocultar investimentos">Ocultar</button>
+          <strong id="investmentTotal">R$ 0,00</strong>
+          <div class="card-footer">
+            <span>Este mês</span>
+            <em class="trend trend-invest">↑ 5.7%</em>
+          </div>
         </article>
 
         <article class="finance-card balance-card" data-card="balance">
-          <div>
+          <div class="card-topline">
             <span>Saldo</span>
-            <strong id="balanceTotal">R$ 0,00</strong>
+            <button class="icon-button" type="button" data-hide-card="balance" aria-label="Ocultar saldo">Ver</button>
           </div>
-          <button class="icon-button" type="button" data-hide-card="balance" aria-label="Ocultar saldo">Ocultar</button>
+          <strong id="balanceTotal">R$ 0,00</strong>
+          <div class="card-footer">
+            <span>Este mês</span>
+            <em class="trend trend-balance">↑ 7.1%</em>
+          </div>
         </article>
       </section>
 
-      <div class="dashboard-grid dashboard-grid-single">
-        <section class="panel report-panel" aria-labelledby="reportTitle">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Relatórios financeiros</p>
-              <h2 id="reportTitle">Filtros</h2>
-            </div>
-            <button id="clearFiltersBtn" class="secondary-button" type="button">Limpar filtros</button>
+      <section class="dashboard-panel report-panel" aria-labelledby="reportTitle">
+        <div class="panel-titlebar">
+          <div>
+            <p class="eyebrow">Relatórios financeiros</p>
+            <h2 id="reportTitle">Filtros</h2>
           </div>
+          <button id="clearFiltersBtn" class="secondary-button" type="button">Limpar filtros</button>
+        </div>
 
-          <div class="filters-grid">
-            <fieldset class="checkbox-group">
-              <legend>Tipo</legend>
-              <label><input id="filterIncome" type="checkbox" value="entrada"> Entrada</label>
-              <label><input id="filterExpense" type="checkbox" value="saida"> Saída</label>
-              <label><input id="filterInvestment" type="checkbox" value="investimento"> Investimento</label>
-            </fieldset>
+        <div class="filters-grid">
+          <fieldset class="checkbox-group">
+            <legend>Tipo</legend>
+            <label><input id="filterIncome" type="checkbox" value="entrada"> Entradas</label>
+            <label><input id="filterExpense" type="checkbox" value="saida"> Saídas</label>
+            <label><input id="filterInvestment" type="checkbox" value="investimento"> Investimentos</label>
+          </fieldset>
 
-            <label>
-              <span>Categoria</span>
-              <select id="filterCategory"></select>
-            </label>
+          <label>
+            <span>Categoria</span>
+            <select id="filterCategory"></select>
+          </label>
 
-            <label>
-              <span>Data inicial</span>
-              <input id="filterStart" type="date">
-            </label>
+          <label>
+            <span>Data inicial</span>
+            <input id="filterStart" type="date">
+          </label>
 
-            <label>
-              <span>Data final</span>
-              <input id="filterEnd" type="date">
-            </label>
-          </div>
+          <label>
+            <span>Data final</span>
+            <input id="filterEnd" type="date">
+          </label>
+        </div>
 
-          <div id="filterStatus" class="chip-row" aria-live="polite"></div>
-          <div class="report-actions">
-            <label class="check-card">
-              <input id="pdfRespectHidden" type="checkbox">
-              <span>Respeitar ocultação de valores no PDF</span>
-            </label>
+        <div class="report-actions">
+          <label class="check-card">
+            <input id="pdfRespectHidden" type="checkbox">
+            <span>Respeitar ocultação de valores no PDF</span>
+          </label>
+          <button id="exportPdfBtn" class="primary-button full-width" type="button">Exportar relatório em PDF</button>
+        </div>
 
-            <button id="exportPdfBtn" class="primary-button full-width" type="button">Exportar relatório em PDF</button>
-          </div>
-        </section>
-      </div>
+        <div id="filterStatus" class="chip-row" aria-live="polite"></div>
+      </section>
 
-      <div class="dashboard-grid dashboard-grid-wide">
-        <section class="panel list-panel" aria-labelledby="historyTitle">
-          <div class="panel-heading">
+      <section class="dashboard-bottom-grid">
+        <section class="dashboard-panel list-panel" aria-labelledby="historyTitle">
+          <div class="panel-titlebar">
             <div>
               <p class="eyebrow">Histórico</p>
-              <h2 id="historyTitle">Movimentações</h2>
+              <h2 id="historyTitle">Histórico de movimentações</h2>
             </div>
             <span id="movementCount" class="count-pill">0 itens</span>
           </div>
-
           <div id="movementsList" class="list-stack" aria-live="polite"></div>
         </section>
 
-        <section id="chartsPanel" class="panel" aria-labelledby="chartsTitle">
-          <div class="panel-heading">
+        <section id="chartsPanel" class="dashboard-panel charts-panel" aria-labelledby="chartsTitle">
+          <div class="panel-titlebar">
             <div>
               <p class="eyebrow">Análise visual</p>
-              <h2 id="chartsTitle">Gráficos financeiros</h2>
+              <h2 id="chartsTitle">Análise visual</h2>
             </div>
           </div>
 
@@ -163,15 +176,14 @@
               <canvas id="flowChart" aria-label="Entradas versus saídas"></canvas>
               <p id="flowChartEmpty" class="empty-state">Sem dados de fluxo.</p>
             </div>
+          </div>
 
-            <div class="chart-box" data-chart-box="monthly">
-              <canvas id="monthlyChart" aria-label="Gráfico mensal"></canvas>
-              <p id="monthlyChartEmpty" class="empty-state">Sem dados mensais.</p>
-            </div>
+          <div class="chart-box monthly-box" data-chart-box="monthly">
+            <canvas id="monthlyChart" aria-label="Gráfico mensal"></canvas>
+            <p id="monthlyChartEmpty" class="empty-state">Sem dados mensais.</p>
           </div>
         </section>
-      </div>
-
+      </section>
     </main>
   </div>
 
