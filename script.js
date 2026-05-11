@@ -45,7 +45,8 @@ const app = {
     category: null,
     flow: null,
     monthly: null
-  }
+  },
+  historyExpanded: false
 };
 
 const $ = (id) => document.getElementById(id);
@@ -392,7 +393,8 @@ function renderCurrentPage() {
 }
 
 function renderDashboard() {
-  $("profileName").textContent = app.profile?.name || app.user.displayName || "Perfil ativo";
+  $("profileName").textContent = `Olá, ${app.profile?.name || app.user.displayName || "Usuário"}!`;
+  $("todayLabel").textContent = formatLongDate(today());
   $("cardsGrid").classList.toggle("hidden", !app.preferences.showCards);
   $("chartsPanel").classList.toggle("hidden", !app.preferences.showCharts);
   syncFiltersToUi();
@@ -502,6 +504,7 @@ function renderMovements(items) {
   clear(list);
 
   const sortedItems = [...items].sort((a, b) => b.date.localeCompare(a.date));
+  const visibleItems = app.historyExpanded ? sortedItems : sortedItems.slice(0, 3);
 
   $("movementCount").textContent = `${sortedItems.length} ${sortedItems.length === 1 ? "item" : "itens"}`;
 
@@ -510,9 +513,21 @@ function renderMovements(items) {
     return;
   }
 
-  sortedItems.forEach((movement) => {
+  visibleItems.forEach((movement) => {
     list.append(createMovementItem(movement));
   });
+
+  if (sortedItems.length > 3) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "history-expand-button";
+    button.textContent = app.historyExpanded ? "Mostrar apenas as 3 últimas" : "Ver todas as movimentações";
+    button.addEventListener("click", () => {
+      app.historyExpanded = !app.historyExpanded;
+      renderMovements(sortedItems);
+    });
+    list.append(button);
+  }
 }
 
 function createMovementItem(movement) {
@@ -1286,6 +1301,16 @@ function formatDate(value) {
   if (!isValidDate(value)) return "";
   const [year, month, day] = value.split("-").map(Number);
   return dateFmt.format(new Date(year, month - 1, day));
+}
+
+function formatLongDate(value) {
+  if (!isValidDate(value)) return "";
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  }).format(new Date(year, month - 1, day));
 }
 
 function formatMonth(value) {

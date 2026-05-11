@@ -41,12 +41,14 @@
     <main class="page-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Perfil ativo</p>
-          <h1 id="profileName">Carregando...</h1>
+          <p class="eyebrow">Dashboard financeiro</p>
+          <h1 id="profileName">Olá, Usuário!</h1>
+          <p class="topbar-subtitle">Aqui está o resumo da sua vida financeira.</p>
         </div>
 
         <div class="topbar-actions">
           <button id="dashboardThemeToggle" class="secondary-button" type="button" aria-label="Alternar tema">Tema claro</button>
+          <span id="todayLabel" class="date-pill"></span>
         </div>
       </header>
 
@@ -88,7 +90,7 @@
         <section class="panel report-panel" aria-labelledby="reportTitle">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Relatórios</p>
+              <p class="eyebrow">Relatórios financeiros</p>
               <h2 id="reportTitle">Filtros</h2>
             </div>
             <button id="clearFiltersBtn" class="secondary-button" type="button">Limpar filtros</button>
@@ -119,13 +121,14 @@
           </div>
 
           <div id="filterStatus" class="chip-row" aria-live="polite"></div>
+          <div class="report-actions">
+            <label class="check-card">
+              <input id="pdfRespectHidden" type="checkbox">
+              <span>Respeitar ocultação de valores no PDF</span>
+            </label>
 
-          <label class="check-card">
-            <input id="pdfRespectHidden" type="checkbox">
-            <span>Respeitar ocultação de valores no PDF</span>
-          </label>
-
-          <button id="exportPdfBtn" class="primary-button full-width" type="button">Exportar relatório em PDF</button>
+            <button id="exportPdfBtn" class="primary-button full-width" type="button">Exportar relatório em PDF</button>
+          </div>
         </section>
       </div>
 
