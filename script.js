@@ -46,7 +46,9 @@ const app = {
     flow: null,
     monthly: null
   },
-  historyExpanded: false
+  historyExpanded: false,
+  eventsBound: false,
+  renderErrorNotified: false
 };
 
 const $ = (id) => document.getElementById(id);
@@ -110,9 +112,17 @@ function initProtectedPage() {
     }
 
     app.user = user;
-    bindSharedEvents();
-    await ensureUserBaseData(user);
-    subscribeUserData(user.uid);
+    if (!app.eventsBound) {
+      bindSharedEvents();
+      app.eventsBound = true;
+    }
+
+    try {
+      await ensureUserBaseData(user);
+      subscribeUserData(user.uid);
+    } catch (error) {
+      handleDataError("Não foi possível preparar os dados do usuário.", error);
+    }
   });
 }
 
@@ -343,52 +353,131 @@ function subscribeUserData(uid) {
   app.unsubscribers.forEach((unsubscribe) => unsubscribe());
   app.unsubscribers = [];
 
-  app.unsubscribers.push(onSnapshot(doc(db, "users", uid), (snapshot) => {
-    app.profile = snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
-    renderCurrentPage();
-  }));
+  app.unsubscribers.push(onSnapshot(
+    doc(db, "users", uid),
+    (snapshot) => {
+      app.profile = snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+      renderCurrentPage();
+    },
+    (error) => handleDataError("Erro ao ouvir perfil no Firebase.", error)
+  ));
 
-  app.unsubscribers.push(onSnapshot(doc(db, "users", uid, "preferences", "main"), (snapshot) => {
-    app.preferences = {
-      ...getDefaultPreferences(),
-      ...(snapshot.exists() ? snapshot.data() : {})
-    };
-    app.preferences.hiddenValues = {
-      ...getDefaultPreferences().hiddenValues,
-      ...(app.preferences.hiddenValues || {})
-    };
-    app.preferences.filters = {
-      ...getDefaultPreferences().filters,
-      ...(app.preferences.filters || {})
-    };
-    applyTheme();
-    renderCurrentPage();
-  }));
+  app.unsubscribers.push(onSnapshot(
+    doc(db, "users", uid, "preferences", "main"),
+    (snapshot) => {
+      app.preferences = normalizePreferences(snapshot.exists() ? snapshot.data() : {});
+      applyTheme();
+      renderCurrentPage();
+    },
+    (error) => handleDataError("Erro ao ouvir preferências no Firebase.", error)
+  ));
 
-  app.unsubscribers.push(onSnapshot(query(collection(db, "users", uid, "categories"), orderBy("name", "asc")), (snapshot) => {
-    app.categories = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-    renderCurrentPage();
-  }));
+  app.unsubscribers.push(onSnapshot(
+    query(collection(db, "users", uid, "categories"), orderBy("name", "asc")),
+    (snapshot) => {
+      app.categories = snapshot.docs.map((item) => normalizeCategoryDoc(item));
+      renderCurrentPage();
+    },
+    (error) => handleDataError("Erro ao ouvir categorias no Firebase.", error)
+  ));
 
-  app.unsubscribers.push(onSnapshot(query(collection(db, "users", uid, "movements"), orderBy("date", "desc")), (snapshot) => {
-    app.movements = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-    renderCurrentPage();
-  }));
+  app.unsubscribers.push(onSnapshot(
+    query(collection(db, "users", uid, "movements"), orderBy("date", "desc")),
+    (snapshot) => {
+      app.movements = snapshot.docs.map((item) => normalizeMovementDoc(item));
+      renderCurrentPage();
+    },
+    (error) => handleDataError("Erro ao ouvir movimentações no Firebase.", error)
+  ));
+}
+
+function normalizePreferences(data = {}) {
+  const defaults = getDefaultPreferences();
+  const rawFilters = data.filters && typeof data.filters === "object" ? data.filters : {};
+  const rawHiddenValues = data.hiddenValues && typeof data.hiddenValues === "object" ? data.hiddenValues : {};
+  return {
+    ...defaults,
+    ...data,
+    hiddenValues: {
+      ...defaults.hiddenValues,
+      ...rawHiddenValues
+    },
+    filters: {
+      ...defaults.filters,
+      ...rawFilters,
+      types: Array.isArray(rawFilters.types) ? rawFilters.types.filter(Boolean) : []
+    },
+    showCharts: data.showCharts ?? defaults.showCharts,
+    showCards: data.showCards ?? defaults.showCards,
+    exportRespectHidden: data.exportRespectHidden ?? defaults.exportRespectHidden,
+    theme: data.theme === "light" ? "light" : "dark"
+  };
+}
+
+function normalizeCategoryDoc(snapshot) {
+  const data = snapshot.data() || {};
+  return {
+    id: snapshot.id,
+    ...data,
+    name: String(data.name || "Sem categoria").trim() || "Sem categoria"
+  };
+}
+
+function normalizeMovementDoc(snapshot) {
+  const data = snapshot.data() || {};
+  const type = ["entrada", "saida", "investimento"].includes(data.type) ? data.type : "entrada";
+  const value = parseMoneyInput(data.value);
+  return {
+    id: snapshot.id,
+    ...data,
+    title: String(data.title || data.name || "Sem título").trim() || "Sem título",
+    value: Number.isFinite(value) ? roundMoney(value) : 0,
+    type,
+    category: String(data.category || "Outros").trim() || "Outros",
+    date: normalizeDateValue(data.date)
+  };
+}
+
+function normalizeDateValue(value) {
+  if (typeof value === "string" && isValidDate(value)) {
+    return value;
+  }
+  if (value?.toDate) {
+    return dateInputValue(value.toDate());
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return dateInputValue(value);
+  }
+  return today();
+}
+
+function handleDataError(message, error) {
+  console.error(message, error);
+  toast(message, "error");
 }
 
 function renderCurrentPage() {
   if (!app.user) {
     return;
   }
-  applyTheme();
-  if (page === "dashboard") {
-    renderDashboard();
-  }
-  if (page === "movement") {
-    renderMovementPage();
-  }
-  if (page === "settings") {
-    renderSettings();
+  try {
+    applyTheme();
+    if (page === "dashboard") {
+      renderDashboard();
+    }
+    if (page === "movement") {
+      renderMovementPage();
+    }
+    if (page === "settings") {
+      renderSettings();
+    }
+    app.renderErrorNotified = false;
+  } catch (error) {
+    console.error("Erro ao renderizar a página.", error);
+    if (!app.renderErrorNotified) {
+      toast("Erro ao atualizar a tela. Confira o console para detalhes.", "error");
+      app.renderErrorNotified = true;
+    }
   }
 }
 
@@ -610,13 +699,18 @@ function renderCategoryChart(items) {
   const labels = Object.keys(grouped);
   const data = Object.values(grouped);
 
-  if (!window.Chart || !labels.length) {
+  if (!labels.length) {
     setChartVisibility("category", false);
     return;
   }
 
   setChartVisibility("category", true);
-  app.charts.category = new Chart($("categoryChart"), {
+  if (!window.Chart) {
+    drawDoughnutCanvas($("categoryChart"), labels, data, "Gastos por categoria");
+    return;
+  }
+
+  app.charts.category = new window.Chart($("categoryChart"), {
     type: "doughnut",
     data: {
       labels,
@@ -630,13 +724,30 @@ function renderFlowChart(items) {
   const grouped = groupMovementsByMonth(items);
   const labels = Object.keys(grouped).sort();
 
-  if (!window.Chart || !labels.length) {
+  if (!labels.length) {
     setChartVisibility("flow", false);
     return;
   }
 
   setChartVisibility("flow", true);
-  app.charts.flow = new Chart($("flowChart"), {
+  const incomeColor = colorWithAlpha("--income", 0.72);
+  const expenseColor = colorWithAlpha("--expense", 0.72);
+  const primaryColor = getCss("--primary");
+  const primaryFill = colorWithAlpha("--primary", 0.16);
+
+  if (!window.Chart) {
+    drawFlowCanvas(
+      $("flowChart"),
+      labels.map(formatMonth),
+      labels.map((label) => grouped[label].income),
+      labels.map((label) => grouped[label].expense),
+      labels.map((label) => grouped[label].income - grouped[label].expense - grouped[label].investment),
+      "Entradas x saídas"
+    );
+    return;
+  }
+
+  app.charts.flow = new window.Chart($("flowChart"), {
     type: "bar",
     data: {
       labels: labels.map(formatMonth),
@@ -645,7 +756,7 @@ function renderFlowChart(items) {
           type: "bar",
           label: "Entradas",
           data: labels.map((label) => grouped[label].income),
-          backgroundColor: "rgba(52, 211, 153, 0.72)",
+          backgroundColor: incomeColor,
           borderRadius: 8,
           borderSkipped: false
         },
@@ -653,7 +764,7 @@ function renderFlowChart(items) {
           type: "bar",
           label: "Saídas",
           data: labels.map((label) => grouped[label].expense),
-          backgroundColor: "rgba(251, 113, 133, 0.72)",
+          backgroundColor: expenseColor,
           borderRadius: 8,
           borderSkipped: false
         },
@@ -661,8 +772,8 @@ function renderFlowChart(items) {
           type: "line",
           label: "Fluxo líquido",
           data: labels.map((label) => grouped[label].income - grouped[label].expense - grouped[label].investment),
-          borderColor: "#60a5fa",
-          backgroundColor: "rgba(96, 165, 250, 0.16)",
+          borderColor: primaryColor,
+          backgroundColor: primaryFill,
           borderWidth: 3,
           pointRadius: 3,
           tension: 0.38,
@@ -678,22 +789,31 @@ function renderMonthlyChart(items) {
   const grouped = groupMovementsByMonth(items);
   const labels = Object.keys(grouped).sort();
 
-  if (!window.Chart || !labels.length) {
+  if (!labels.length) {
     setChartVisibility("monthly", false);
     return;
   }
 
   setChartVisibility("monthly", true);
-  app.charts.monthly = new Chart($("monthlyChart"), {
+  const investmentColor = getCss("--investment");
+  const investmentFill = colorWithAlpha("--investment", 0.16);
+  const monthlyData = labels.map((label) => grouped[label].income - grouped[label].expense - grouped[label].investment);
+
+  if (!window.Chart) {
+    drawLineCanvas($("monthlyChart"), labels.map(formatMonth), monthlyData, "Evolução mensal");
+    return;
+  }
+
+  app.charts.monthly = new window.Chart($("monthlyChart"), {
     type: "line",
     data: {
       labels: labels.map(formatMonth),
       datasets: [
         {
           label: "Evolução do saldo mensal",
-          data: labels.map((label) => grouped[label].income - grouped[label].expense - grouped[label].investment),
-          borderColor: "#a78bfa",
-          backgroundColor: "rgba(167, 139, 250, 0.16)",
+          data: monthlyData,
+          borderColor: investmentColor,
+          backgroundColor: investmentFill,
           borderWidth: 3,
           pointRadius: 3,
           fill: true,
@@ -712,7 +832,7 @@ function setChartVisibility(name, hasData) {
 
   if (canvas) canvas.hidden = !hasData;
   if (empty) empty.hidden = hasData;
-  if (box) box.classList.toggle("chart-hidden", !hasData);
+  if (box) box.classList.toggle("chart-empty", !hasData);
 }
 
 function chartOptions(title, cartesian = false) {
@@ -737,12 +857,12 @@ function chartOptions(title, cartesian = false) {
   if (cartesian) {
     options.scales = {
       x: {
-        grid: { color: "rgba(148, 163, 184, 0.12)" },
+        grid: { color: getCss("--chart-grid") },
         ticks: { color: getCss("--muted") }
       },
       y: {
         beginAtZero: true,
-        grid: { color: "rgba(148, 163, 184, 0.12)" },
+        grid: { color: getCss("--chart-grid") },
         ticks: {
           color: getCss("--muted"),
           callback: (value) => formatMoney(value)
@@ -752,6 +872,213 @@ function chartOptions(title, cartesian = false) {
   }
 
   return options;
+}
+
+function prepareCanvas(canvas) {
+  if (!canvas) return null;
+  const box = canvas.parentElement;
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.max(280, Math.floor(box?.clientWidth || 320) - 24);
+  const height = Math.max(220, Math.floor(box?.clientHeight || 280) - 24);
+  canvas.width = Math.floor(width * ratio);
+  canvas.height = Math.floor(height * ratio);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  const context = canvas.getContext("2d");
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  context.clearRect(0, 0, width, height);
+  context.font = "12px Inter, system-ui, sans-serif";
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  return { context, width, height };
+}
+
+function drawDoughnutCanvas(canvas, labels, data, title) {
+  const prepared = prepareCanvas(canvas);
+  if (!prepared) return;
+  const { context, width, height } = prepared;
+  const colors = chartColors();
+  const total = data.reduce((sum, value) => sum + value, 0) || 1;
+  const centerX = width * 0.36;
+  const centerY = height * 0.48;
+  const radius = Math.min(width, height) * 0.25;
+  let start = -Math.PI / 2;
+
+  drawCanvasTitle(context, title, 14, 20);
+  data.forEach((value, index) => {
+    const angle = (value / total) * Math.PI * 2;
+    context.beginPath();
+    context.arc(centerX, centerY, radius, start, start + angle);
+    context.lineWidth = Math.max(26, radius * 0.42);
+    context.strokeStyle = colors[index % colors.length];
+    context.stroke();
+    start += angle;
+  });
+
+  context.fillStyle = getCss("--surface");
+  context.beginPath();
+  context.arc(centerX, centerY, radius * 0.46, 0, Math.PI * 2);
+  context.fill();
+
+  const legendX = width * 0.64;
+  let legendY = Math.max(64, centerY - labels.length * 12);
+  labels.forEach((label, index) => {
+    context.fillStyle = colors[index % colors.length];
+    context.beginPath();
+    roundedRect(context, legendX, legendY - 9, 16, 10, 5);
+    context.fill();
+    context.fillStyle = getCss("--text");
+    context.fillText(`${label} (${Math.round((data[index] / total) * 100)}%)`, legendX + 24, legendY);
+    legendY += 22;
+  });
+}
+
+function drawFlowCanvas(canvas, labels, incomeData, expenseData, netData, title) {
+  const series = [
+    { label: "Entradas", data: incomeData, color: colorWithAlpha("--income", 0.78), kind: "bar" },
+    { label: "Saídas", data: expenseData, color: colorWithAlpha("--expense", 0.78), kind: "bar" },
+    { label: "Fluxo", data: netData, color: getCss("--primary"), kind: "line" }
+  ];
+  drawCartesianCanvas(canvas, labels, series, title);
+}
+
+function drawLineCanvas(canvas, labels, data, title) {
+  drawCartesianCanvas(canvas, labels, [
+    { label: "Saldo", data, color: getCss("--investment"), fill: colorWithAlpha("--investment", 0.16), kind: "line" }
+  ], title);
+}
+
+function drawCartesianCanvas(canvas, labels, series, title) {
+  const prepared = prepareCanvas(canvas);
+  if (!prepared) return;
+  const { context, width, height } = prepared;
+  const padding = { top: 42, right: 18, bottom: 52, left: 64 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const values = series.flatMap((item) => item.data);
+  const max = Math.max(...values, 0);
+  const min = Math.min(...values, 0);
+  const span = max - min || 1;
+  const zeroY = padding.top + (max / span) * plotHeight;
+  const stepX = labels.length > 1 ? plotWidth / (labels.length - 1) : plotWidth;
+
+  drawCanvasTitle(context, title, 14, 20);
+  context.strokeStyle = getCss("--chart-grid");
+  context.fillStyle = getCss("--muted");
+  context.lineWidth = 1;
+
+  for (let index = 0; index <= 4; index += 1) {
+    const y = padding.top + (plotHeight / 4) * index;
+    const value = max - (span / 4) * index;
+    context.beginPath();
+    context.moveTo(padding.left, y);
+    context.lineTo(width - padding.right, y);
+    context.stroke();
+    context.fillText(formatCompactMoney(value), 8, y + 4);
+  }
+
+  labels.forEach((label, index) => {
+    const x = padding.left + (labels.length > 1 ? stepX * index : plotWidth / 2);
+    context.fillStyle = getCss("--muted");
+    context.fillText(label, x - 14, height - 24);
+  });
+
+  const barSeries = series.filter((item) => item.kind === "bar");
+  const lineSeries = series.filter((item) => item.kind === "line");
+  const groupWidth = labels.length > 1 ? Math.min(46, stepX * 0.52) : 56;
+  const barWidth = barSeries.length ? groupWidth / barSeries.length : 0;
+
+  barSeries.forEach((item, seriesIndex) => {
+    context.fillStyle = item.color;
+    item.data.forEach((value, index) => {
+      const xCenter = padding.left + (labels.length > 1 ? stepX * index : plotWidth / 2);
+      const x = xCenter - groupWidth / 2 + seriesIndex * barWidth;
+      const y = valueToY(value, min, span, padding.top, plotHeight);
+      const top = Math.min(y, zeroY);
+      const heightValue = Math.max(2, Math.abs(zeroY - y));
+      context.beginPath();
+      roundedRect(context, x, top, Math.max(4, barWidth - 4), heightValue, 5);
+      context.fill();
+    });
+  });
+
+  lineSeries.forEach((item) => {
+    const points = item.data.map((value, index) => ({
+      x: padding.left + (labels.length > 1 ? stepX * index : plotWidth / 2),
+      y: valueToY(value, min, span, padding.top, plotHeight)
+    }));
+    if (item.fill && points.length) {
+      context.beginPath();
+      context.moveTo(points[0].x, zeroY);
+      points.forEach((point) => context.lineTo(point.x, point.y));
+      context.lineTo(points[points.length - 1].x, zeroY);
+      context.closePath();
+      context.fillStyle = item.fill;
+      context.fill();
+    }
+    context.beginPath();
+    points.forEach((point, index) => {
+      if (index === 0) context.moveTo(point.x, point.y);
+      else context.lineTo(point.x, point.y);
+    });
+    context.strokeStyle = item.color;
+    context.lineWidth = 3;
+    context.stroke();
+    context.fillStyle = item.color;
+    points.forEach((point) => {
+      context.beginPath();
+      context.arc(point.x, point.y, 3, 0, Math.PI * 2);
+      context.fill();
+    });
+  });
+
+  drawCanvasLegend(context, series, padding.left, height - 4);
+}
+
+function drawCanvasTitle(context, title, x, y) {
+  context.fillStyle = getCss("--text");
+  context.font = "700 13px Inter, system-ui, sans-serif";
+  context.fillText(title, x, y);
+  context.font = "12px Inter, system-ui, sans-serif";
+}
+
+function drawCanvasLegend(context, series, x, y) {
+  let cursor = x;
+  series.forEach((item) => {
+    context.fillStyle = item.color;
+    context.beginPath();
+    roundedRect(context, cursor, y - 10, 18, 10, 5);
+    context.fill();
+    context.fillStyle = getCss("--text");
+    context.fillText(item.label, cursor + 24, y);
+    cursor += context.measureText(item.label).width + 54;
+  });
+}
+
+function valueToY(value, min, span, top, height) {
+  return top + ((Math.max(value, min) - min) / span) * -height + height;
+}
+
+function roundedRect(context, x, y, width, height, radius) {
+  if (typeof context.roundRect === "function") {
+    context.roundRect(x, y, width, height, radius);
+    return;
+  }
+  const safeRadius = Math.min(radius, Math.abs(width) / 2, Math.abs(height) / 2);
+  context.moveTo(x + safeRadius, y);
+  context.lineTo(x + width - safeRadius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  context.lineTo(x + width, y + height - safeRadius);
+  context.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  context.lineTo(x + safeRadius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  context.lineTo(x, y + safeRadius);
+  context.quadraticCurveTo(x, y, x + safeRadius, y);
+}
+
+function formatCompactMoney(value) {
+  const rounded = Math.round(Number(value) || 0);
+  return rounded >= 1000 ? `R$ ${Math.round(rounded / 1000)} mil` : `R$ ${rounded}`;
 }
 
 function groupMovementsByMonth(items) {
@@ -769,10 +1096,15 @@ function groupMovementsByMonth(items) {
 
 async function saveMovement(event) {
   event.preventDefault();
+  if (!app.user) {
+    setFeedback($("movementFeedback"), "Sessão não carregada. Entre novamente.", "error");
+    return;
+  }
+
   const id = $("movementId").value;
   const title = $("movementName").value.trim();
   const rawValue = $("movementValue").value.trim();
-  const value = Number(rawValue);
+  const value = parseMoneyInput(rawValue);
   const type = $("movementType").value;
   const category = $("movementCategory").value;
   const date = $("movementDate").value || today();
@@ -812,7 +1144,8 @@ async function saveMovement(event) {
       window.location.href = "dashboard.html";
     }
   } catch (error) {
-    setFeedback($("movementFeedback"), "Não foi possível salvar.", "error");
+    console.error("Erro ao salvar movimentação.", error);
+    setFeedback($("movementFeedback"), "Não foi possível salvar. Confira conexão e permissões do Firebase.", "error");
   }
 }
 
@@ -1001,7 +1334,12 @@ async function updatePreferences(partial) {
     ...partial
   };
   applyTheme();
-  await setDoc(doc(db, "users", app.user.uid, "preferences", "main"), app.preferences, { merge: true });
+  renderCurrentPage();
+  try {
+    await setDoc(doc(db, "users", app.user.uid, "preferences", "main"), app.preferences, { merge: true });
+  } catch (error) {
+    handleDataError("Não foi possível salvar preferências no Firebase.", error);
+  }
 }
 
 async function clearFinancialData() {
@@ -1293,7 +1631,11 @@ function isValidDate(value) {
 
 function today() {
   const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return dateInputValue(now);
+}
+
+function dateInputValue(date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
 
@@ -1333,6 +1675,16 @@ function formatSignedMoney(item) {
   return `${sign}${formatMoney(item.value)}`;
 }
 
+function parseMoneyInput(value) {
+  if (typeof value === "number") return value;
+  const text = String(value ?? "").trim();
+  if (!text) return Number.NaN;
+  const normalized = text.includes(",")
+    ? text.replace(/\./g, "").replace(",", ".")
+    : text;
+  return Number(normalized);
+}
+
 function roundMoney(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
@@ -1360,11 +1712,42 @@ function same(a, b) {
 }
 
 function chartColors() {
-  return ["#60a5fa", "#34d399", "#fb7185", "#a78bfa", "#fbbf24", "#22d3ee", "#f472b6", "#84cc16", "#818cf8", "#f97316"];
+  return [
+    getCss("--primary"),
+    getCss("--income"),
+    getCss("--expense"),
+    getCss("--investment"),
+    getCss("--balance"),
+    getCss("--accent-cyan"),
+    getCss("--accent-pink"),
+    getCss("--accent-lime"),
+    getCss("--accent-indigo"),
+    getCss("--accent-orange")
+  ].filter(Boolean);
 }
 
 function getCss(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function colorWithAlpha(name, alpha) {
+  const color = getCss(name);
+  const hex = color.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const value = hex[1].length === 3
+      ? hex[1].split("").map((char) => char + char).join("")
+      : hex[1];
+    const red = parseInt(value.slice(0, 2), 16);
+    const green = parseInt(value.slice(2, 4), 16);
+    const blue = parseInt(value.slice(4, 6), 16);
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+  }
+  const rgb = color.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgb) {
+    const [red, green, blue] = rgb[1].split(",").map((part) => Number.parseFloat(part));
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+  }
+  return color;
 }
 
 // Segurança local da interface: CPF vira e-mail técnico apenas para o Firebase Auth.
